@@ -79,7 +79,9 @@ public final class HarnessHud extends CustomUIHud {
                 rows.append(label("...and " + (outstanding - shown) + " more", 11, "#6f8296", false));
                 break;
             }
-            rows.append(label((state.seen ? "• judge  " : "◦ run    ") + c.id(),
+            // ASCII only. The bullet drew fine but the white bullet came out as "?", which reads as
+            // something being wrong rather than as a check nobody has run yet.
+            rows.append(label((state.seen ? "> judge  " : "  run    ") + c.id(),
                     11, state.seen ? "#ffd479" : "#96a9be", false));
             shown++;
         }
