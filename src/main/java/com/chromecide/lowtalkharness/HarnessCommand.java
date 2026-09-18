@@ -31,6 +31,7 @@ public class HarnessCommand extends AbstractCommandCollection {
         this.requirePermission(PERMISSION);
         this.addSubCommand(new Todo(plugin));
         this.addSubCommand(new Hud(plugin));
+        this.addSubCommand(new Npc());
         this.addSubCommand(new Show(plugin));
         this.addSubCommand(new Pass(plugin));
         this.addSubCommand(new Fail(plugin));
@@ -129,6 +130,29 @@ public class HarnessCommand extends AbstractCommandCollection {
                                @Nonnull com.hypixel.hytale.server.core.universe.world.World world) {
             boolean on = plugin.toggleHud(player, entity);
             context.sendMessage(Message.raw(on ? "Harness panel on." : "Harness panel off."));
+        }
+    }
+
+    /** Put the tester NPC in front of you. The tree that runs the checks is bound to it. */
+    static class Npc extends com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand {
+        Npc() {
+            super("npc", "Spawn the harness tester NPC where you are standing");
+            this.requirePermission(PERMISSION);
+        }
+
+        @Override
+        protected void execute(@Nonnull CommandContext context,
+                               @Nonnull com.hypixel.hytale.component.Store<com.hypixel.hytale.server.core.universe.world.storage.EntityStore> store,
+                               @Nonnull com.hypixel.hytale.component.Ref<com.hypixel.hytale.server.core.universe.world.storage.EntityStore> entity,
+                               @Nonnull com.hypixel.hytale.server.core.universe.PlayerRef player,
+                               @Nonnull com.hypixel.hytale.server.core.universe.world.World world) {
+            var transform = store.getComponent(entity,
+                    com.hypixel.hytale.server.core.modules.entity.component.TransformComponent.getComponentType());
+            if (transform == null) {
+                context.sendMessage(Message.raw("Could not work out where you are standing."));
+                return;
+            }
+            HarnessNpc.spawnFacing(store, transform.getPosition(), line -> context.sendMessage(Message.raw(line)));
         }
     }
 

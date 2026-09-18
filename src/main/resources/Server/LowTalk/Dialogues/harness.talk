@@ -1,0 +1,267 @@
+# The harness tester: one NPC, one tree, every check that can be driven from a dialogue.
+#
+# Shipped in the harness's own asset pack, so LowTalk loads it straight from the jar. Nothing copies it to disk,
+# which means it cannot fall out of step with the build the way the test corridor did.
+#
+# Two rules hold everywhere in this file, and the harness depends on both:
+#
+#   1. Every check gets a passage of its own, named check_<id with dots as underscores>. The harness watches
+#      passages, so a shared passage would mark several checks run when only one was. No exceptions, even where
+#      it makes the file longer.
+#   2. A passage that shows something timed waits it out before returning. Two effects on screen at once make a
+#      screenshot ambiguous about which one it caught.
+#
+# Checks needing a body in the world (blocks, triggers, restarts, the editor) are not here. They are in the
+# check list as gaps with their own steps.
+
+npc: @harness
+title: LowTalk harness
+speaker: Tester
+
+== start
+Harness tester. Pick an area; each option runs one check and comes back.
+-> Feedback: notifications
+    <<jump area_notify>>
+-> Feedback: titles
+    <<jump area_title>>
+-> Items
+    <<jump area_items>>
+-> The player's body
+    <<jump area_body>>
+-> The world
+    <<jump area_world>>
+-> Media
+    <<jump area_media>>
+-> This NPC
+    <<jump area_npc>>
+-> Leave
+    <<end>>
+
+# ---- notifications ------------------------------------------------------------------------------------------
+
+== area_notify
+Notifications appear in the corner and fade by themselves.
+-> A plain toast
+    <<jump check_notify_toast>>
+-> A warning toast
+    <<jump check_notify_warning>>
+-> Back
+    <<jump start>>
+
+== check_notify_toast
+<<notify "LowTalk test" "Notification works" success>>
+<<wait 3>>
+<<jump area_notify>>
+
+== check_notify_warning
+<<notify "Careful" "This is the warning style" warning>>
+<<wait 3>>
+<<jump area_notify>>
+
+# ---- titles -------------------------------------------------------------------------------------------------
+
+== area_title
+The styles are the game's own, so a server has the ones its version shipped: Default and Major everywhere,
+GoblinBreach and VoidEviction from 0.7. Each should look plainly different.
+-> Default, no style named
+    <<jump check_title_default>>
+-> Default written the old way, as "minor"
+    <<jump check_title_minor_alias>>
+-> Major
+    <<jump check_title_major>>
+-> GoblinBreach (0.7 and later)
+    <<jump check_title_goblinbreach>>
+-> VoidEviction (0.7 and later)
+    <<jump check_title_voideviction>>
+-> Back
+    <<jump start>>
+
+== check_title_default
+<<title "Default title" "Secondary line">>
+<<wait 3>>
+<<jump area_title>>
+
+== check_title_minor_alias
+<<title "Written as minor" "Same as the default" minor>>
+<<wait 3>>
+<<jump area_title>>
+
+== check_title_major
+<<title "MAJOR TITLE" "The grove remembers" Major 4>>
+<<wait 4>>
+<<jump area_title>>
+
+== check_title_goblinbreach
+<<title "GOBLIN BREACH" "they come through the pass" GoblinBreach 4>>
+<<wait 4>>
+<<jump area_title>>
+
+== check_title_voideviction
+<<title "VOID EVICTION" "the dark lets go" VoidEviction 4>>
+<<wait 4>>
+<<jump area_title>>
+
+# ---- items --------------------------------------------------------------------------------------------------
+
+== area_items
+You are holding {count("Food_Bread")} bread.
+-> Give me two bread
+    <<jump check_items_give>>
+-> Take one back
+    <<jump check_items_take>>
+-> Read what I am holding
+    <<jump check_items_count>>
+-> Back
+    <<jump start>>
+
+== check_items_give
+<<give Food_Bread 2>>
+<<jump area_items>>
+
+== check_items_take
+<<take Food_Bread 1>>
+<<jump area_items>>
+
+== check_items_count
+count() says {count("Food_Bread")}, and has("Food_Bread") is {has("Food_Bread")}.
+<<jump area_items>>
+
+# ---- the player's body --------------------------------------------------------------------------------------
+
+== area_body
+Health and effects.
+-> Heal me fully
+    <<jump check_body_heal>>
+-> Set my health to 10
+    <<jump check_body_stat>>
+-> Give me regeneration
+    <<jump check_body_effect>>
+-> Take it away again
+    <<jump check_body_cure>>
+-> Back
+    <<jump start>>
+
+== check_body_heal
+<<heal>>
+<<jump area_body>>
+
+== check_body_stat
+<<stat Health 10>>
+<<jump area_body>>
+
+== check_body_effect
+<<effect HealthRegen_Buff_T1>>
+<<jump area_body>>
+
+== check_body_cure
+<<cure HealthRegen_Buff_T1>>
+<<jump area_body>>
+
+# ---- the world ----------------------------------------------------------------------------------------------
+
+== area_world
+It is hour {hour()} and the weather is {weather()}.
+-> Make it rain
+    <<jump check_world_weather>>
+-> Clear the sky
+    <<jump check_world_weather_clear>>
+-> Set it to noon
+    <<jump check_world_time>>
+-> Read a translated string
+    <<jump check_world_translate>>
+-> Back
+    <<jump start>>
+
+== check_world_weather
+<<weather Zone1_Cloudy_Medium player>>
+<<wait 2>>
+<<jump area_world>>
+
+== check_world_weather_clear
+<<weather clear player>>
+<<wait 2>>
+<<jump area_world>>
+
+== check_world_time
+<<time noon>>
+<<jump area_world>>
+
+== check_world_translate
+t() gives "{t("server.lowtalk.hint.talk")}", which should read as words rather than as the key itself.
+<<jump area_world>>
+
+# ---- media --------------------------------------------------------------------------------------------------
+
+== area_media
+Music, particles and the camera.
+-> Play a music container
+    <<jump check_media_music>>
+-> Back to the area's own music
+    <<jump check_media_music_clear>>
+-> Particles on this NPC
+    <<jump check_media_vfx>>
+-> Shake my camera
+    <<jump check_media_camera>>
+-> Back
+    <<jump start>>
+
+== check_media_music
+<<music MC_Zone0>>
+<<wait 4>>
+<<jump area_media>>
+
+== check_media_music_clear
+<<music clear>>
+<<wait 2>>
+<<jump area_media>>
+
+== check_media_vfx
+<<vfx Totem_Heal_Simple_Test 2 3>>
+<<wait 3>>
+<<jump area_media>>
+
+== check_media_camera
+<<camera Battleaxe_Bash>>
+<<wait 2>>
+<<jump area_media>>
+
+# ---- this NPC -----------------------------------------------------------------------------------------------
+
+== area_npc
+This NPC's own name, state and animation. Renaming persists, so put it back when you are done.
+-> Play an animation
+    <<jump check_npc_anim>>
+-> Play a sound here
+    <<jump check_npc_sound>>
+-> Rename me
+    <<jump check_npc_rename>>
+-> Give me my name back
+    <<jump check_npc_rename_restore>>
+-> Turn hostile, then friendly again
+    <<jump check_npc_attitude>>
+-> Back
+    <<jump start>>
+
+== check_npc_anim
+<<anim Wave>>
+<<wait 2>>
+<<jump area_npc>>
+
+== check_npc_sound
+<<sound SFX_Player_Pickup_Item>>
+<<jump area_npc>>
+
+== check_npc_rename
+<<npc_name "Renamed Tester">>
+<<jump area_npc>>
+
+== check_npc_rename_restore
+<<npc_name "LowTalk harness">>
+<<jump area_npc>>
+
+== check_npc_attitude
+My attitude to you is {attitude()}.
+<<attitude hostile>>
+Now hostile. Press Continue and I will calm down again.
+<<attitude friendly>>
+<<jump area_npc>>
