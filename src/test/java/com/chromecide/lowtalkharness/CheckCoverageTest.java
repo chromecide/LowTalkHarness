@@ -4,7 +4,9 @@ import com.chromecide.lowtalk.parser.Validator;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -94,6 +96,54 @@ class CheckCoverageTest {
             assertTrue(watch.matches("[a-z0-9_]+/[a-z0-9_]+"),
                     c.id() + " watches '" + watch + "', which is not a dialogue/passage pair");
         }
+    }
+
+    /**
+     * A check watching a passage of the harness's own dialogues must name one that is really there.
+     *
+     * <p>A watched passage that does not exist never fires, and nothing says so: the check simply sits as never
+     * run for ever, looking like work outstanding rather than a typo. That is how the station 2 check was
+     * broken — it watched "start", and station 2 has no passage by that name, because two guarded starts are
+     * the thing it exists to demonstrate.
+     *
+     * <p>Only our own dialogues can be checked this way. Checks that watch LowTalk's corridor name passages in
+     * a file this project does not own, so they are left to the eye.
+     */
+    @Test
+    void everyWatchedPassageInOurOwnDialoguesExists() throws java.io.IOException {
+        java.nio.file.Path dir = java.nio.file.Path.of("src/main/resources/Server/LowTalk/Dialogues");
+        if (!java.nio.file.Files.isDirectory(dir)) return;
+
+        Map<String, Set<String>> passages = new LinkedHashMap<>();
+        try (java.util.stream.Stream<java.nio.file.Path> files = java.nio.file.Files.walk(dir)) {
+            for (java.nio.file.Path f : files.filter(x -> x.toString().endsWith(".talk")).toList()) {
+                String text = java.nio.file.Files.readString(f);
+                Set<String> names = new LinkedHashSet<>();
+                java.util.regex.Matcher m = java.util.regex.Pattern
+                        .compile("(?m)^==\\s*(\\w+)\\s*$").matcher(text);
+                while (m.find()) names.add(m.group(1));
+                String dialogue = f.getFileName().toString().replace(".talk", "");
+                passages.put(dialogue, names);
+                // an included file's passages belong to whoever includes it, so pool them under the includer too
+                if (dialogue.startsWith("_")) {
+                    passages.computeIfAbsent("harness", k -> new LinkedHashSet<>()).addAll(names);
+                }
+            }
+        }
+
+        List<String> missing = new ArrayList<>();
+        for (Checks.Check c : Checks.all()) {
+            String watch = c.autoSeen();
+            if (watch == null) continue;
+            String dialogue = watch.substring(0, watch.indexOf('/'));
+            String passage = watch.substring(watch.indexOf('/') + 1);
+            Set<String> known = passages.get(dialogue);
+            if (known == null) continue;                        // not one of ours; nothing to check against
+            if (!known.contains(passage)) missing.add(c.id() + " watches " + watch);
+        }
+        assertTrue(missing.isEmpty(),
+                "these checks watch a passage that does not exist, so they can never fire:\n  "
+                        + String.join("\n  ", missing));
     }
 
     /** Ids are the key in every run record on every version, so a duplicate would merge two histories. */

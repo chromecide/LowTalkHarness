@@ -166,34 +166,76 @@ public final class Checks {
                 "attitude() reads the current value, the NPC turns hostile, then calms when set friendly again.",
                 "lowtalk:attitude", "AttitudeGroup");
 
+        tree("basics.continue", "check_basics_continue", "Two lines in a row give a Continue",
+                "A Continue button between the lines rather than the option list, and the options back after.",
+                "lowtalk:options");
+        tree("basics.hidden", "check_basics_hidden", "An option hidden until a condition holds",
+                "Absent from the list entirely until the reveal, then present.", "lowtalk:options");
+        tree("basics.disabled", "check_basics_disabled", "An option shown but greyed out",
+                "Visible and unclickable before the reveal, clickable after. Different from hidden: the player "
+                        + "can see there is something there.",
+                "lowtalk:show", "lowtalk:options");
+        tree("basics.reveal", "check_basics_reveal", "<<set>> changes what the next menu offers",
+                "Setting a variable changes the option list when the menu is next shown.", "lowtalk:set");
+
+        tree("input.word", "check_input_word", "<<input>> takes typed text",
+                "The box accepts typing, Enter and OK behave the same, and the text comes back echoed exactly, "
+                        + "capitals and spaces included. An empty submit takes the empty branch.",
+                "lowtalk:input");
+        tree("input.plural", "check_input_plural", "plural() agrees with a typed number",
+                "1 reads \"apple\" and anything else \"apples\", using the number the player typed.",
+                "lowtalk:plural", "lowtalk:input");
+
+        tree("random.chance", "check_random_chance", "chance() splits roughly evenly",
+                "HEADS and TAILS both come up over several tries, rather than one answer every time.",
+                "lowtalk:chance");
+        tree("random.number", "check_random_number", "random() gives a number in range",
+                "A whole number from 0 to 5, changing most tries.", "lowtalk:random");
+        tree("random.ordinal", "check_random_ordinal", "ordinal() words a count, per NPC",
+                "first, second, third and so on, counted on the NPC rather than the player, so a second tester "
+                        + "has its own count.",
+                "lowtalk:ordinal", "lowtalk:set");
+
+        tree("format.variation", "check_format_random", "A random block picks one alternative",
+                "One of three lines, a different one most times. The [a|b] greeting on the menu above should "
+                        + "vary between visits too.",
+                "lowtalk:variation");
+        tree("format.once", "check_format_once", "A once-option removes itself",
+                "Gone from the list for good after being picked, per player and NPC.", "lowtalk:once");
+        tree("format.wait", "check_format_wait", "<<wait>> pauses without a button",
+                "About two seconds between the lines, with no Continue to press.", "lowtalk:wait");
+        tree("format.include", "check_format_include", "include: pulls in another file's passages",
+                "A line from _harness_shared.talk. If include failed, the jump would report a problem instead.",
+                "lowtalk:include");
+
+        tree("progress.reputation.up", "check_progress_reputation_up", "<<reputation>> raises standing",
+                "The number rises by ten and the rank changes at the boundary. Needs the NPC to be in a "
+                        + "reputation group, which the tester's role is.",
+                "ReputationPlugin", "lowtalk:reputation", "lowtalk:rank");
+        tree("progress.reputation.down", "check_progress_reputation_down", "<<reputation>> lowers it again",
+                "The number falls by ten.", "ReputationPlugin", "lowtalk:reputation");
+        tree("progress.objective", "check_progress_objective", "<<objective>> starts one, and objective() reads it",
+                "A tracker entry appears and the state reads \"active\". The tracker is unreliable on this "
+                        + "version, so a client drop here is the game's bug rather than this check's.",
+                "ObjectivePlugin", "lowtalk:objective");
+
+        tree("memory.npc", "check_memory_npc", "A variable set on the NPC stays on that NPC",
+                "A second tester still reads as not having met you. Spawn one with /harness npc to compare.",
+                "lowtalk:set");
+        tree("memory.player", "check_memory_player", "A $player variable is shared across NPCs",
+                "Every tester reads the same count, unlike the per-NPC one above.", "lowtalk:set");
+        tree("memory.visited", "check_memory_visited", "visited() knows which passages have been seen",
+                "False before the marker passage is reached, true afterwards.", "lowtalk:visited");
+        tree("memory.marker", "check_memory_marker", "A passage that exists to be visited",
+                "Nothing visible happens; it gives visited() something to answer about.", "lowtalk:visited");
+        tree("memory.reset", "check_memory_reset", "A variable can be cleared again",
+                "The per-NPC line goes back to saying you have not met.", "lowtalk:set");
+
         // ---- still LowTalk's corridor: the tree cannot do these with one NPC ---------------------------------
-        corridor("station.basics", 1, "test_basics/start", "Choices, hubs, Continue, Leave and guarded options",
-                "Two lines give a Continue between them; a hidden option appears only once revealed; a disabled "
-                        + "option is greyed and inert; Leave closes after one line.",
-                "lowtalk:options", "lowtalk:jump", "lowtalk:end", "lowtalk:show");
-        corridor("station.memory", 2, "test_memory/menu", "Memory: per-NPC, per-player, once-blocks and visited()",
-                "Station 2 is two NPCs on purpose: $met is per NPC, the visit counter is per player. Needs both, so "
-                        + "one tester cannot show it. visited() flips after the passage is seen and a once-block runs once.",
-                "lowtalk:set", "lowtalk:once", "lowtalk:visited");
-        corridor("station.input", 3, "test_input/start", "Typed input, interpolation and plural()",
-                "The box takes what is typed, Enter submits, the answer is interpolated back, and plural() agrees "
-                        + "with the number.",
-                "lowtalk:input", "lowtalk:plural");
-        corridor("station.progress", 7, "test_progress/start", "Objectives and reputation",
-                "An objective starts and reads as active; reputation moves by ten and the rank changes at the "
-                        + "boundary. See the objective warning: the tracker is unreliable on this version.",
-                "ObjectivePlugin", "ReputationPlugin", "lowtalk:objective", "lowtalk:reputation", "lowtalk:rank");
         corridor("station.travel", 8, "test_travel/start", "The shop hand-off and teleport",
                 "The barter shop opens and the conversation resumes on Back. Needs a merchant role, which the "
                         + "tester does not have.",
                 "lowtalk:shop", "lowtalk:teleport");
-        corridor("station.random", 9, "test_random/start", "random(), chance() and ordinal()",
-                "Rolling again changes the numbers and the ordinal reads correctly.",
-                "lowtalk:random", "lowtalk:chance", "lowtalk:ordinal");
-        corridor("station.format", 10, "test_format/start", "Variations, random blocks, once-options and include",
-                "[a|b] varies between openings, a random block picks one alternative, a once-option vanishes after "
-                        + "use, the pause has no Continue, and the included file's line appears.",
-                "lowtalk:wait", "lowtalk:include", "lowtalk:variation");
         corridor("station.npc.spawn", 12, "test_npc/start", "Spawning and despawning an NPC",
                 "A new NPC appears beside you and despawning closes the window and removes it. Despawning the "
                         + "harness tester would end the session it is being run from.",

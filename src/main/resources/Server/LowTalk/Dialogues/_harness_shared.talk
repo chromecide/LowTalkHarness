@@ -1,0 +1,6 @@
+# Pulled into the tester with `include:`, so that a passage defined in another file can be jumped to. The check
+# is that the include worked at all: if it did not, the jump fails and the conversation reports a problem.
+
+== check_format_include
+This line lives in _harness_shared.talk, not in the tester's own file, so seeing it means include: worked.
+<<jump area_format>>

@@ -17,12 +17,15 @@
 npc: @harness
 title: LowTalk harness
 speaker: Tester
+include: _harness_shared
+
+# A choice shows at most eight options, so the hub is two pages rather than one long list.
 
 == start
 Harness tester. Pick an area; each option runs one check and comes back.
--> Feedback: notifications
+-> What the player sees: notifications
     <<jump area_notify>>
--> Feedback: titles
+-> What the player sees: titles
     <<jump area_title>>
 -> Items
     <<jump area_items>>
@@ -32,10 +35,29 @@ Harness tester. Pick an area; each option runs one check and comes back.
     <<jump area_world>>
 -> Media
     <<jump area_media>>
--> This NPC
-    <<jump area_npc>>
+-> More...
+    <<jump start_more>>
 -> Leave
     <<end>>
+
+== start_more
+The rest: this NPC, the language itself, and what gets remembered.
+-> This NPC
+    <<jump area_npc>>
+-> Choices and flow
+    <<jump area_basics>>
+-> Typed input
+    <<jump area_input>>
+-> Random and time
+    <<jump area_random>>
+-> Format extras
+    <<jump area_format>>
+-> Objectives and standing
+    <<jump area_progress>>
+-> Memory
+    <<jump area_memory>>
+-> Back
+    <<jump start>>
 
 # ---- notifications ------------------------------------------------------------------------------------------
 
@@ -240,7 +262,7 @@ This NPC's own name, state and animation. Renaming persists, so put it back when
 -> Turn hostile, then friendly again
     <<jump check_npc_attitude>>
 -> Back
-    <<jump start>>
+    <<jump start_more>>
 
 == check_npc_anim
 <<anim Wave>>
@@ -265,3 +287,196 @@ My attitude to you is {attitude()}.
 Now hostile. Press Continue and I will calm down again.
 <<attitude friendly>>
 <<jump area_npc>>
+
+# ---- choices and flow ---------------------------------------------------------------------------------------
+
+== area_basics
+Options can be hidden, shown greyed out, or offered once. The reveal below sets a variable the next two read.
+-> Two lines with a Continue between them
+    <<jump check_basics_continue>>
+-> Reveal the hidden option
+    <<jump check_basics_reveal>>
+-> The hidden option (only here once revealed) <<if $harness.revealed>>
+    <<jump check_basics_hidden>>
+-> Greyed out until revealed <<show if $harness.revealed>>
+    <<jump check_basics_disabled>>
+-> Back
+    <<jump start_more>>
+
+== check_basics_continue
+The first of two lines. Expect a Continue button rather than the option list.
+And the second. Expect the options back after this one.
+<<jump area_basics>>
+
+== check_basics_reveal
+<<set $harness.revealed = true>>
+Revealed. The hidden option is now in the list and the greyed one is clickable.
+<<jump area_basics>>
+
+== check_basics_hidden
+You reached an option that was not in the list until a variable said so.
+<<jump area_basics>>
+
+== check_basics_disabled
+This one was visible but greyed out before the reveal, and refused the click.
+<<jump area_basics>>
+
+# ---- typed input --------------------------------------------------------------------------------------------
+
+== area_input
+A text box takes what you type; Enter and OK should behave the same.
+-> Type a word
+    <<jump check_input_word>>
+-> Type a number, and read plural()
+    <<jump check_input_plural>>
+-> Back
+    <<jump start_more>>
+
+== check_input_word
+<<input $tmp.word "Type any word, then press Enter">>
+<<if $tmp.word == "">>
+  The box came back empty. Expect this line when you submit nothing.
+<<else>>
+  You typed "{$tmp.word}". Expect it echoed exactly, capitals, spaces and all.
+<<endif>>
+<<jump area_input>>
+
+== check_input_plural
+<<input $tmp.n "Type a number">>
+{$tmp.n} {plural($tmp.n, "apple", "apples")}. Expect the word to agree with the number, and 1 to read "apple".
+<<jump area_input>>
+
+# ---- random and time ----------------------------------------------------------------------------------------
+
+== area_random
+Chance, dice and the clock.
+-> Flip a coin with chance()
+    <<jump check_random_chance>>
+-> Roll a number with random()
+    <<jump check_random_number>>
+-> Count visits with ordinal()
+    <<jump check_random_ordinal>>
+-> Back
+    <<jump start_more>>
+
+== check_random_chance
+<<if chance(0.5)>>
+  HEADS. Expect roughly half of tries, and not the same answer every time.
+<<else>>
+  TAILS. Expect roughly half of tries, and not the same answer every time.
+<<endif>>
+<<jump area_random>>
+
+== check_random_number
+random(6) gave {random(6)}. Expect a whole number from 0 to 5, changing most tries.
+<<jump area_random>>
+
+== check_random_ordinal
+<<set $npc.rolls = $npc.rolls + 1>>
+This is the {ordinal($npc.rolls)} roll for this NPC, counted per NPC rather than per player.
+<<jump area_random>>
+
+# ---- format extras ------------------------------------------------------------------------------------------
+
+== area_format
+[Greetings|Hello|Well met], {player}. Expect that word to vary between visits.
+-> A random block picks one of three
+    <<jump check_format_random>>
+-> A once-only option <<once>>
+    <<jump check_format_once>>
+-> A two second pause
+    <<jump check_format_wait>>
+-> A line from an included file
+    <<jump check_format_include>>
+-> Back
+    <<jump start_more>>
+
+== check_format_random
+<<random>>
+  Alternative ONE. Expect a different one most times.
+<<or>>
+  Alternative TWO. Expect a different one most times.
+<<or>>
+  Alternative THREE. Expect a different one most times.
+<<endrandom>>
+<<jump area_format>>
+
+== check_format_once
+That option removes itself for good once picked. Look at the list: it has gone.
+<<jump area_format>>
+
+== check_format_wait
+Counting... one...
+<<wait 2>>
+...two. Expect about two seconds between those lines, with no button in between.
+<<jump area_format>>
+
+# ---- objectives and standing --------------------------------------------------------------------------------
+
+== area_progress
+Standing with my group is {reputation()}, rank "{rank()}". Objective_Gather reads "{objective("Objective_Gather")}".
+-> Raise my standing by ten
+    <<jump check_progress_reputation_up>>
+-> Lower it by ten
+    <<jump check_progress_reputation_down>>
+-> Start Objective_Gather
+    <<jump check_progress_objective>>
+-> Back
+    <<jump start_more>>
+
+== check_progress_reputation_up
+<<reputation +10>>
+Expect the number above to rise by ten, and the rank to change at the boundary.
+<<jump area_progress>>
+
+== check_progress_reputation_down
+<<reputation -10>>
+Expect it to fall by ten.
+<<jump area_progress>>
+
+== check_progress_objective
+<<objective Objective_Gather>>
+Expect a tracker entry, and the state above to read "active". Objectives are rough on this version: if the
+client drops here, that is the game's tracker bug rather than this check.
+<<jump area_progress>>
+
+# ---- memory -------------------------------------------------------------------------------------------------
+
+== area_memory
+Per NPC: we have met {$met ? "before" : "not before"}. Per player: you have opened a tester {$player.visits} time(s).
+Spawn a second tester with /harness npc and compare: the first line differs between them, the second does not.
+-> Remember me
+    <<jump check_memory_npc>>
+-> Count this visit, across every tester
+    <<jump check_memory_player>>
+-> Have I seen the marker passage? visited() says {visited("check_memory_marker")}
+    <<jump check_memory_visited>>
+-> Go to the marker passage
+    <<jump check_memory_marker>>
+-> Forget me again
+    <<jump check_memory_reset>>
+-> Back
+    <<jump start_more>>
+
+== check_memory_npc
+<<set $met = true>>
+Set on this NPC only. A second tester should still say we have not met.
+<<jump area_memory>>
+
+== check_memory_player
+<<set $player.visits = $player.visits + 1>>
+Counted on you rather than on me, so every tester reads the same number.
+<<jump area_memory>>
+
+== check_memory_visited
+visited("check_memory_marker") is {visited("check_memory_marker")}. Expect false until you go there, then true.
+<<jump area_memory>>
+
+== check_memory_marker
+Nothing happens here. It exists to be visited, so visited() has something to answer about.
+<<jump area_memory>>
+
+== check_memory_reset
+<<set $met = false>>
+Forgotten. The line above should go back to saying we have not met.
+<<jump area_memory>>
