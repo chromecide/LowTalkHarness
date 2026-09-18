@@ -41,12 +41,15 @@ Records live in the server's `mods/Chromecide_LowTalkHarness/` folder, one file 
 |---|---|
 | `/harness todo` | What still needs running or judging on this server version |
 | `/harness show <id>` | One check: the steps, what should happen, and how it went here |
-| `/harness pass <id> [note]` | Record that it looked right |
-| `/harness fail <id> [note]` | Record that it did not, with what you saw |
-| `/harness skip <id> [note]` | Record that it does not apply on this version |
+| `/harness pass <id> [--note="..."]` | Record that it looked right |
+| `/harness fail <id> [--note="..."]` | Record that it did not, with what you saw |
+| `/harness skip <id> [--note="..."]` | Record that it does not apply on this version |
 
 `pass` is refused for a check the harness never saw run, because a record of passes that were never executed is
 worse than no record.
+
+The note is an option, not a positional argument, and a note with spaces must be quoted:
+`/harness fail title.goblinbreach --note="looked identical to Major"`.
 
 ## The check list
 

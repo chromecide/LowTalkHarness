@@ -69,19 +69,19 @@ public final class Checks {
         // the checks a server update is most likely to disturb.
         add(station("title.default", 5, "A title with no style named",
                 "A small title across the screen for about 3 seconds, with the second line above the main one.",
-                "test_feedback/titles", "EventTitleUtil", "lowtalk:title"));
+                "test_feedback/title_default", "EventTitleUtil", "lowtalk:title"));
         add(station("title.minor.alias", 5, "A title written the old way, as \"minor\"",
                 "Exactly the same as title.default. If it differs, the alias older dialogues rely on has stopped meaning Default.",
-                "test_feedback/titles", "EventTitleUtil", "lowtalk:title"));
+                "test_feedback/title_minor", "EventTitleUtil", "lowtalk:title"));
         add(station("title.major", 5, "A title in the Major style",
                 "A large cinematic title, plainly different from Default, for about 4 seconds.",
-                "test_feedback/titles", "EventTitleUtil", "lowtalk:title"));
+                "test_feedback/title_major", "EventTitleUtil", "lowtalk:title"));
         add(station("title.goblinbreach", 5, "A title in the GoblinBreach style (0.7 and later)",
                 "The game's goblin-breach treatment, different from Major. On a server without the style the window closes and the log names the style it could not find, which is correct.",
-                "test_feedback/titles", "EventTitleUtil", "EventTitleStyle", "lowtalk:title"));
+                "test_feedback/title_goblinbreach", "EventTitleUtil", "EventTitleStyle", "lowtalk:title"));
         add(station("title.voideviction", 5, "A title in the VoidEviction style (0.7 and later)",
                 "The game's void-eviction treatment, different again from Major and GoblinBreach.",
-                "test_feedback/titles", "EventTitleUtil", "EventTitleStyle", "lowtalk:title"));
+                "test_feedback/title_voideviction", "EventTitleUtil", "EventTitleStyle", "lowtalk:title"));
         add(station("notify.toast", 5, "A toast notification",
                 "A small notification in the corner reading \"LowTalk test\" / \"Notification works\".",
                 "test_feedback/start", "NotificationUtil", "lowtalk:notify"));

@@ -160,7 +160,14 @@ public final class RunRecord {
     public synchronized void flush() {
         if (!dirty) return;
         Document cs = new Document();
-        for (Map.Entry<String, Check> e : checks.entrySet()) cs.put(e.getKey(), e.getValue().toDocument());
+        for (Map.Entry<String, Check> e : checks.entrySet()) {
+            Check c = e.getValue();
+            // Only checks with something to say. Reading a check creates it, and /harness todo reads them all,
+            // so persisting every entry would fill the file with "seen: false" and make an untouched run look
+            // like a tracked one.
+            if (!c.seen && c.verdict == null) continue;
+            cs.put(e.getKey(), c.toDocument());
+        }
         Document root = new Document();
         root.put("serverVersion", serverVersion);
         root.put("updated", Instant.now().toString());

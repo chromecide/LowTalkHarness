@@ -10,7 +10,9 @@ import com.hypixel.hytale.server.core.command.system.basecommands.CommandBase;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -28,46 +30,105 @@ public class HarnessCommand extends AbstractCommandCollection {
         super("harness", "LowTalk test harness: what is tested on this server version");
         this.requirePermission(PERMISSION);
         this.addSubCommand(new Todo(plugin));
+        this.addSubCommand(new Hud(plugin));
         this.addSubCommand(new Show(plugin));
         this.addSubCommand(new Pass(plugin));
         this.addSubCommand(new Fail(plugin));
         this.addSubCommand(new Skip(plugin));
     }
 
-    /** Everything not yet decided on this version, the exercised ones first: those are ready to judge. */
+    /**
+     * What is outstanding, as a few lines rather than a list.
+     *
+     * <p>The first version printed every undecided check and filled the chat window at fourteen of them; at the
+     * seventy-odd the corridor is worth it would be unreadable. Chat is a poor place for a list, so this answers
+     * "how much is left, and where" and takes a filter — a station number, a kind, or an id prefix — for the
+     * one slice you are actually standing in front of.
+     */
     static class Todo extends CommandBase {
         private final HarnessPlugin plugin;
+        private final OptionalArg<String> filterArg =
+                withOptionalArg("only", "A station number, a kind such as RESTART, or the start of an id", ArgTypes.STRING);
 
         Todo(HarnessPlugin plugin) {
-            super("todo", "What still needs testing or judging on this server version");
+            super("todo", "How much is left to test on this server version; add a station, kind or id to narrow it");
             this.plugin = plugin;
             this.requirePermission(PERMISSION);
+        }
+
+        /** True when a check belongs to the slice the player asked about. */
+        private static boolean matches(Checks.Check c, String filter) {
+            String f = filter.trim().toLowerCase(java.util.Locale.ROOT);
+            if (f.isEmpty()) return true;
+            if (c.station() != null && f.equals(String.valueOf(c.station()))) return true;
+            if (c.kind().name().toLowerCase(java.util.Locale.ROOT).equals(f)) return true;
+            return c.id().toLowerCase(java.util.Locale.ROOT).startsWith(f);
         }
 
         @Override
         protected void executeSync(@Nonnull CommandContext context) {
             Consumer<String> out = line -> context.sendMessage(Message.raw(line));
             RunRecord record = plugin.record();
-            List<String> ready = new ArrayList<>();
-            List<String> untouched = new ArrayList<>();
+            boolean narrowed = filterArg.provided(context);
+            String filter = narrowed ? filterArg.get(context) : "";
+
+            List<Checks.Check> ready = new ArrayList<>();
+            List<Checks.Check> untouched = new ArrayList<>();
+            Map<String, int[]> byGroup = new LinkedHashMap<>();
             for (Checks.Check c : Checks.all()) {
+                if (!matches(c, filter)) continue;
                 RunRecord.Check state = record.check(c.id());
                 if (state.verdict != null) continue;
-                (state.seen ? ready : untouched).add(
-                        "  " + c.id() + "  [" + c.kind() + (c.station() == null ? "" : " s" + c.station()) + "]  " + c.title());
+                (state.seen ? ready : untouched).add(c);
+                String group = c.station() != null ? "station " + c.station() : c.kind().name().toLowerCase(java.util.Locale.ROOT);
+                int[] n = byGroup.computeIfAbsent(group, k -> new int[2]);
+                if (state.seen) n[0]++; else n[1]++;
             }
+
             int[] t = record.tally(Checks.ids());
-            out.accept("Harness on " + record.serverVersion() + ": " + t[1] + " of " + Checks.ids().size()
-                    + " decided (" + t[2] + " pass, " + t[3] + " fail).");
+            out.accept("Harness on " + record.serverVersion() + ": " + t[1] + "/" + Checks.ids().size()
+                    + " decided, " + t[2] + " pass, " + t[3] + " fail.");
+            if (ready.isEmpty() && untouched.isEmpty()) {
+                out.accept(narrowed ? "Nothing outstanding for '" + filter + "'." : "Everything is decided on this version.");
+                return;
+            }
+
+            if (narrowed) {
+                // asked about one slice, so name the checks in it
+                for (Checks.Check c : ready) out.accept("  judge: " + c.id() + " - " + c.title());
+                for (Checks.Check c : untouched) out.accept("  run:   " + c.id() + " - " + c.title());
+                return;
+            }
+
+            out.accept("  " + ready.size() + " run but not judged, " + untouched.size() + " not yet run:");
+            for (Map.Entry<String, int[]> e : byGroup.entrySet()) {
+                out.accept("    " + e.getKey() + ": " + e.getValue()[0] + " to judge, " + e.getValue()[1] + " to run");
+            }
             if (!ready.isEmpty()) {
-                out.accept("Run but not judged - say /harness pass|fail <id>:");
-                ready.forEach(out);
+                out.accept("  next: /harness pass|fail " + ready.get(0).id());
             }
-            if (!untouched.isEmpty()) {
-                out.accept("Not yet run:");
-                untouched.forEach(out);
-            }
-            if (ready.isEmpty() && untouched.isEmpty()) out.accept("Everything is decided on this version.");
+            out.accept("  narrow it: /harness todo <station|kind|id>");
+        }
+    }
+
+    /** The corner panel, on or off. A player command because a HUD belongs to a player, not the console. */
+    static class Hud extends com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand {
+        private final HarnessPlugin plugin;
+
+        Hud(HarnessPlugin plugin) {
+            super("hud", "Show or hide the corner panel of what is left to test");
+            this.plugin = plugin;
+            this.requirePermission(PERMISSION);
+        }
+
+        @Override
+        protected void execute(@Nonnull CommandContext context,
+                               @Nonnull com.hypixel.hytale.component.Store<com.hypixel.hytale.server.core.universe.world.storage.EntityStore> store,
+                               @Nonnull com.hypixel.hytale.component.Ref<com.hypixel.hytale.server.core.universe.world.storage.EntityStore> entity,
+                               @Nonnull com.hypixel.hytale.server.core.universe.PlayerRef player,
+                               @Nonnull com.hypixel.hytale.server.core.universe.world.World world) {
+            boolean on = plugin.toggleHud(player, entity);
+            context.sendMessage(Message.raw(on ? "Harness panel on." : "Harness panel off."));
         }
     }
 
@@ -131,6 +192,7 @@ public class HarnessCommand extends AbstractCommandCollection {
             }
             record.decide(id, verdict, noteArg.provided(context) ? noteArg.get(context) : null);
             record.flush();
+            plugin.refreshHuds();
             context.sendMessage(Message.raw(id + ": " + verdict + " recorded on " + record.serverVersion() + "."));
         }
     }
