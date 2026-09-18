@@ -51,6 +51,17 @@ worse than no record.
 The note is an option, not a positional argument, and a note with spaces must be quoted:
 `/harness fail title.goblinbreach --note="looked identical to Major"`.
 
+## Which checks to re-run after a Hytale update
+
+```
+./gradlew whatChanged --args="~/hytale-archive/release/0.6.7 ~/hytale-archive/release/0.6.8"
+```
+
+Compares two archived server jars class by class and names the checks whose surfaces moved, so a server release
+means re-running a few rather than all of them or none. It also lists classes that changed, are used by LowTalk,
+and are covered by no check — the blind spots that update opened. Reads the archive kept by
+`~/hytale-mods/tools/hytale-archive.sh`.
+
 ## The check list
 
 `Checks.java`, written by hand rather than generated from the station dialogues. Most checks are one option in
@@ -60,6 +71,13 @@ and cannot have one. A list generated from options would contain only the easy s
 
 Each check names the surfaces it exercises, so a Hytale update can say which checks to re-run rather than all of
 them: when a version diff touches `EventTitleUtil`, the checks tagged with it are the ones that matter.
+
+Checks with no station and nothing to watch are still listed, so they show as never run rather than not showing
+at all. [docs/gaps.md](docs/gaps.md) says why each one has no station — several cannot have one, and the
+in-game editor, the largest surface in the mod, has no automated coverage whatsoever.
+
+`CheckCoverageTest` fails the build when LowTalk grows a command or function no check mentions. Not "must be
+tested" — a gap is a fine answer — but a feature nobody has thought about is not.
 
 ## Running it
 

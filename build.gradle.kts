@@ -42,6 +42,22 @@ repositories {
 // are compiled from source at matching commits; the Hytale plugin stages it as a mod for runServer.
 dependencies {
     vineImplementation("com.chromecide.lowtalk:LowTalk:${property("lowtalk_version")}")
+
+    testImplementation(platform("org.junit:junit-bom:5.11.3"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
+
+// Which checks a Hytale update makes worth re-running, from the archive tools/hytale-archive.sh keeps.
+tasks.register<JavaExec>("whatChanged") {
+    group = "verification"
+    description = "Compare two archived server jars and name the checks that cover what changed."
+    mainClass.set("com.chromecide.lowtalkharness.WhatChanged")
+    classpath = sourceSets["main"].runtimeClasspath
 }
 
 tasks.named<Jar>("jar") {
