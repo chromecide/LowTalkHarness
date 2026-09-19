@@ -126,9 +126,15 @@ If one of these keeps being broken, it should become enforcement rather than a s
 
 ## The release gate
 
-**The full tree is walked again on the final jar, immediately before tagging, every time.** Not the checks
-the last fix touched — all of them. This is the one place the scoping above does not apply, and it is not
-negotiable however small the last change looked.
+**The full tree is walked again on the final jar, second to last, every time.** Not the checks the last fix
+touched — all of them. This is the one place the scoping above does not apply, and it is not negotiable
+however small the last change looked.
+
+Second to last, not last, because the final pass is documentation — release notes, the changelog's date, the
+README — and none of that is in the jar. The test is mechanical rather than a judgement: **rebuild after the
+last change and confirm the build id has not moved.** If it is the same jar, the walk still describes what
+ships and the tag can go on. If it moved, something outside the docs changed and the walk is stale. The build
+is deterministic, so this is a fact, not an opinion.
 
 Why, in Justin's words: *"I don't want a repeat of 0.3.0 where i discovered a game breaking bug seconds after
 tagging."* A tag is public and permanent in a way a build is not. The walk costs twenty minutes; finding out
@@ -137,14 +143,16 @@ impression of a mod that does not work.
 
 Before a LowTalk version is tagged:
 
-1. One clean walk of the **whole tree** on the **final jar**, on the **release line** server (the pre-release
-   line is informative, never a gate — LowTalk ships against the release line), run *after* the last change
-   and *before* the tag, with nothing built in between.
-2. Every result stamped with that jar's build id. A pass carried over from an earlier build does not count
+1. One clean walk of the **whole tree** on the **final jar**, on the **release line** server, run after the
+   last change that touches the jar. Documentation may follow it; nothing else may.
+2. The same walk on the **pre-release line** when a pre-release jar is being shipped. A jar that goes out is
+   a jar that was walked, or it does not go out.
+3. Every result stamped with that jar's build id. A pass carried over from an earlier build does not count
    towards the gate, however recently it was observed. If a fault is found during the walk, the fix makes a
    new jar and the walk starts again — that is the cost, and it is the point.
-3. Zero outstanding feedback: everything reported is fixed, failed with a reason, or moved to gaps.md.
-4. Every gap listed in gaps.md with why it has no station.
-5. The built jar booted on a plain server, not just the dev one — see the mod's own release notes for why.
+4. Zero outstanding feedback: everything reported is fixed, failed with a reason, or moved to gaps.md.
+5. Every gap listed in gaps.md with why it has no station.
+6. The built jar booted on a plain server, not just the dev one — see the mod's own release notes for why.
+7. A rebuild after the documentation pass produces the same build id the walk was run against.
 
 A release is allowed to have gaps. It is not allowed to have unknowns that nobody wrote down.
