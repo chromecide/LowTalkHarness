@@ -211,10 +211,18 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
         refreshHuds();
     }
 
-    /** The panel follows the conversation: opening one points it at that station. */
+    /**
+     * The panel follows the conversation: opening one points it at that station.
+     *
+     * <p>Also the one line that says a conversation happened at all. Without it a dialogue opening is invisible
+     * from outside the game unless it happens to reach a passage some check is watching for the first time —
+     * so "did the bound door talk?" could not be answered from the log, only by asking the person who clicked
+     * it. A tester should never have to be the instrument.
+     */
     @Override
     public void onStart(@Nonnull DialogueContext ctx) {
         pointHudAt(ctx.getPlayer().getUuid(), ctx.getDialogueId());
+        getLogger().at(Level.INFO).log("[harness] opened %s", ctx.getDialogueId());
     }
 
     /** Back to the whole picture when the conversation closes. */
