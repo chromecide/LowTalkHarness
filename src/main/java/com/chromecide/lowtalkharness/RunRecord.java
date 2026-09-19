@@ -43,6 +43,8 @@ public final class RunRecord {
         @Nullable public String note;
         @Nullable public String firstSeen;
         @Nullable public String decidedAt;
+        /** The LowTalk build this was last observed on. A result from an older jar is evidence about that jar. */
+        @Nullable public String build;
 
         /**
          * What this check counts as, taking silence for a pass. Null means nobody has run it and nobody has
@@ -66,6 +68,7 @@ public final class RunRecord {
             if (note != null) d.put("note", note);
             if (firstSeen != null) d.put("firstSeen", firstSeen);
             if (decidedAt != null) d.put("decidedAt", decidedAt);
+            if (build != null) d.put("build", build);
             return d;
         }
 
@@ -83,6 +86,7 @@ public final class RunRecord {
             c.note = d.getString("note");
             c.firstSeen = d.getString("firstSeen");
             c.decidedAt = d.getString("decidedAt");
+            c.build = d.getString("build");
             return c;
         }
     }
@@ -141,6 +145,8 @@ public final class RunRecord {
 
     private final Path file;
     private final String serverVersion;
+    /** The LowTalk build running right now, stamped onto everything observed during this run. */
+    private final String build;
     private final Map<String, Check> checks = new LinkedHashMap<>();
     private final List<Feedback> feedback = new ArrayList<>();
     /**
@@ -152,7 +158,12 @@ public final class RunRecord {
     private boolean dirty;
 
     public RunRecord(@Nonnull Path folder, @Nonnull String serverVersion) {
+        this(folder, serverVersion, "unknown");
+    }
+
+    public RunRecord(@Nonnull Path folder, @Nonnull String serverVersion, @Nonnull String build) {
         this.serverVersion = serverVersion;
+        this.build = build;
         // the version is part of the name, so a run against another server cannot overwrite this one
         this.file = folder.resolve("run-" + serverVersion.replaceAll("[^A-Za-z0-9._-]", "_") + ".json");
         load();
@@ -160,6 +171,29 @@ public final class RunRecord {
 
     public String serverVersion() {
         return serverVersion;
+    }
+
+    /** The LowTalk build under test. */
+    public String build() {
+        return build;
+    }
+
+    /**
+     * Results carried over from a different build of LowTalk than the one running.
+     *
+     * <p>Honest evidence about a jar that no longer exists. Worth keeping — it is how a version's history
+     * reads — and worth naming, because a release gate that counts it is counting the wrong thing.
+     */
+    public synchronized List<String> fromAnotherBuild(@Nonnull List<String> ids) {
+        List<String> out = new ArrayList<>();
+        for (String id : ids) {
+            Check c = checks.get(id);
+            if (c == null || c.outcome() == null) continue;
+            // An unstamped result is not a matching one: it was written before the stamp existed, which is
+            // exactly the run this was built for — fifty-two results across five jars, indistinguishable.
+            if (!build.equals(c.build)) out.add(id);
+        }
+        return out;
     }
 
     public Path file() {
@@ -177,12 +211,19 @@ public final class RunRecord {
         return check(id).outcome();
     }
 
-    /** Record that a check was exercised. Idempotent; the first time is the one that is timestamped. */
+    /**
+     * Record that a check was exercised. The first time is the one that is timestamped, but every time
+     * restamps the build: running it again on a new jar is what makes the evidence current again, and a
+     * stamp that only ever recorded the first sighting would make that impossible to say.
+     */
     public synchronized void markSeen(@Nonnull String id) {
         Check c = check(id);
-        if (c.seen) return;
-        c.seen = true;
-        c.firstSeen = Instant.now().toString();
+        if (c.seen && build.equals(c.build)) return;
+        if (!c.seen) {
+            c.seen = true;
+            c.firstSeen = Instant.now().toString();
+        }
+        c.build = build;
         dirty = true;
     }
 
@@ -192,6 +233,7 @@ public final class RunRecord {
         c.verdict = verdict;
         c.note = note == null || note.isBlank() ? null : note.trim();
         c.decidedAt = Instant.now().toString();
+        c.build = build;
         dirty = true;
     }
 
@@ -334,6 +376,7 @@ public final class RunRecord {
         }
         Document root = new Document();
         root.put("serverVersion", serverVersion);
+        root.put("build", build);
         root.put("updated", Instant.now().toString());
         root.put("checks", cs);
         if (!feedback.isEmpty()) {

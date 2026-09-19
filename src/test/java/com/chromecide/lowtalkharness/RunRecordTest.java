@@ -170,4 +170,43 @@ class RunRecordTest {
         assertFalse(Checks.isWatched("editor.rows.render"), "the editor has nothing watching it and never will");
         assertFalse(Checks.isWatched("no.such.check"), "and an id that names nothing is not watched either");
     }
+
+    /**
+     * A result is evidence about the jar it was seen on. Fifty-two checks were once recorded against one
+     * Hytale version over an evening in which LowTalk was rebuilt five times: every result honestly observed,
+     * and the file still read as one clean run against one thing. The stamp is what tells them apart.
+     */
+    @Test
+    void aResultRemembersWhichBuildSawIt(@TempDir Path dir) {
+        String id = anId(), other = anotherId();
+        RunRecord first = new RunRecord(dir, "0.0.0-test", "0.4.0 (aaaaaaaa)");
+        first.markSeen(id);
+        first.flush();
+
+        RunRecord second = new RunRecord(dir, "0.0.0-test", "0.4.0 (bbbbbbbb)");
+        assertEquals(List.of(id), second.fromAnotherBuild(Checks.ids()),
+                "the earlier pass is carried over, and says so");
+        assertEquals(RunRecord.Verdict.PASS, second.outcome(id), "but it is not thrown away");
+
+        second.markSeen(other);
+        assertEquals(List.of(id), second.fromAnotherBuild(Checks.ids()),
+                "what this build saw for itself is not carried over");
+
+        second.markSeen(id);   // seen again on this build
+        assertTrue(second.fromAnotherBuild(Checks.ids()).isEmpty(), "and re-running it clears the mark");
+    }
+
+    /** A result written before builds were stamped is from an unknown jar, which is not this jar. */
+    @Test
+    void anUnstampedResultDoesNotCountAsThisBuild(@TempDir Path dir) throws Exception {
+        java.nio.file.Files.writeString(dir.resolve("run-0.0.0-test.json"), """
+                {
+                  "serverVersion": "0.0.0-test",
+                  "checks": { "%s": { "seen": true } }
+                }
+                """.formatted(anId()));
+
+        RunRecord r = new RunRecord(dir, "0.0.0-test", "0.4.0 (cccccccc)");
+        assertEquals(List.of(anId()), r.fromAnotherBuild(Checks.ids()));
+    }
 }

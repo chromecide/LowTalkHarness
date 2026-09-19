@@ -78,6 +78,12 @@ A check removed from `Checks.java` leaves its result behind in records written b
 to a `retired` section of the file at boot and logged once: they stop being counted, without the file losing
 what really happened on a real server.
 
+## How a session runs
+
+[docs/protocol.md](docs/protocol.md). Prepare, ground state, walk, one bounce, report, fix, re-test — in that
+order, without overlapping. Written after an evening that found three real bugs and spent most of itself
+recovering from testing, diagnosing and fixing all happening at once against a jar that kept changing.
+
 ## Which checks to re-run after a Hytale update
 
 ```

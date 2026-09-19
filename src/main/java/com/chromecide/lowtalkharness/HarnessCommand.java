@@ -211,34 +211,57 @@ public class HarnessCommand extends AbstractCommandCollection {
     }
 
     /**
-     * Forget a check, so the tester offers it again.
+     * Forget checks, so the tester offers them again.
      *
-     * <p>The tree hides an option once its check has run, which is what makes walking it possible — but it also
-     * means a check cannot be repeated to look at something twice. This puts one back.
+     * <p>The tree hides an option once its check has run, which is what makes walking it possible — and what
+     * makes a second walk impossible without this. After a fix, phase 7 of the protocol re-runs the checks
+     * the fix names, so it takes a prefix as well as an exact id: {@code /harness reset title} puts back every
+     * title check, and {@code /harness reset all} puts back the whole tree for a release walk.
+     *
+     * <p>Forgetting is the honest way to re-test. The alternative — walking a tree that still believes it has
+     * been walked — is how a record ends up describing a jar that no longer exists.
      */
     static class Reset extends CommandBase {
         private final HarnessPlugin plugin;
-        private final RequiredArg<String> idArg = withRequiredArg("check", "Check id", ArgTypes.STRING);
+        private final RequiredArg<String> idArg =
+                withRequiredArg("check", "A check id, an id prefix, or 'all'", ArgTypes.STRING);
 
         Reset(HarnessPlugin plugin) {
-            super("reset", "Forget a check on this version so it can be run again");
+            super("reset", "Forget a check, a group of them, or all, so they can be run again");
             this.plugin = plugin;
             this.requirePermission(PERMISSION);
         }
 
         @Override
         protected void executeSync(@Nonnull CommandContext context) {
-            String id = idArg.get(context);
-            if (Checks.byId(id) == null) {
-                context.sendMessage(Message.raw("No check called '" + id + "'. /harness todo lists them."));
+            Consumer<String> out = line -> context.sendMessage(Message.raw(line));
+            String arg = idArg.get(context).trim();
+            RunRecord record = plugin.record();
+
+            List<String> targets = new ArrayList<>();
+            if (arg.equalsIgnoreCase("all")) {
+                targets.addAll(Checks.ids());
+            } else if (Checks.byId(arg) != null) {
+                targets.add(arg);
+            } else {
+                for (String id : Checks.ids()) if (id.startsWith(arg)) targets.add(id);
+                if (targets.isEmpty()) {
+                    out.accept("Nothing matches '" + arg + "'. /harness todo lists what is left.");
+                    return;
+                }
+            }
+
+            int forgotten = 0;
+            for (String id : targets) if (record.clear(id)) forgotten++;
+            record.flush();
+            plugin.refreshHuds();
+            if (forgotten == 0) {
+                out.accept("Nothing recorded for " + (targets.size() == 1 ? targets.get(0) : targets.size() + " checks")
+                        + " on " + record.serverVersion() + ".");
                 return;
             }
-            boolean had = plugin.record().clear(id);
-            plugin.record().flush();
-            plugin.refreshHuds();
-            context.sendMessage(Message.raw(had
-                    ? id + " forgotten on " + plugin.record().serverVersion() + "; the tester will offer it again."
-                    : id + " had nothing recorded on this version."));
+            out.accept("Forgot " + forgotten + " result(s) on " + record.serverVersion()
+                    + "; the tester will offer them again.");
         }
     }
 
@@ -419,9 +442,16 @@ public class HarnessCommand extends AbstractCommandCollection {
             int skipped = 0;
             for (String id : ids) if (record.check(id).verdict == RunRecord.Verdict.SKIP) skipped++;
 
-            out.accept("LowTalk harness, " + record.serverVersion() + ":");
+            out.accept("LowTalk harness, " + record.serverVersion() + ", LowTalk " + record.build() + ":");
             out.accept("  " + t[2] + " pass, " + t[3] + " fail, " + skipped + " skipped, "
                     + (ids.size() - t[1]) + " never run, of " + ids.size() + ".");
+            // A pass observed on a jar that no longer exists is history, not a release gate.
+            List<String> carried = record.fromAnotherBuild(ids);
+            if (!carried.isEmpty()) {
+                out.accept("  " + carried.size() + " of those were seen on an earlier build and do not count"
+                        + " towards a release: " + String.join(", ", carried.subList(0, Math.min(6, carried.size())))
+                        + (carried.size() > 6 ? ", ..." : ""));
+            }
 
             for (String id : ids) {
                 RunRecord.Check c = record.check(id);

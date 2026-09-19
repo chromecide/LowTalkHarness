@@ -73,7 +73,8 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
     @Override
     protected void setup() {
         String version = serverVersion();
-        record = new RunRecord(dataFolder(), version);
+        String build = Build.describe();
+        record = new RunRecord(dataFolder(), version, build);
 
         LowTalkApi api = LowTalkApi.get();
         api.addListener(this);
@@ -82,10 +83,16 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
 
         int[] t = record.tally(Checks.ids());
         getLogger().at(Level.INFO).log(
-                "LowTalk harness watching server %s: %d checks, %d run, %d answered (%d pass, %d fail), "
-                        + "%d still to run, %d pieces of feedback. Record: %s",
-                version, Checks.ids().size(), t[0], t[1], t[2], t[3], Checks.ids().size() - t[1],
+                "LowTalk harness watching server %s, LowTalk %s: %d checks, %d run, %d answered "
+                        + "(%d pass, %d fail), %d still to run, %d pieces of feedback. Record: %s",
+                version, build, Checks.ids().size(), t[0], t[1], t[2], t[3], Checks.ids().size() - t[1],
                 record.feedback().size(), record.file());
+        List<String> carried = record.fromAnotherBuild(Checks.ids());
+        if (!carried.isEmpty()) {
+            getLogger().at(Level.INFO).log(
+                    "%d result(s) were observed on an earlier build of LowTalk and do not count towards a release: %s",
+                    carried.size(), String.join(", ", carried));
+        }
         // A check that was removed from the list leaves its result behind in older records. Say so once, rather
         // than letting a stale id sit in the file looking like something that still means anything.
         List<String> retired = record.retiredIds();
