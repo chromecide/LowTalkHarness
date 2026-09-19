@@ -351,6 +351,15 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
     @Override
     public void onNode(@Nonnull DialogueContext ctx, @Nonnull String node) {
         whereabouts.put(ctx.getPlayer().getUuid(), new Where(ctx.getDialogueId(), node));
+        // A passage only counts for a station check when the station is what opened it. A block bound to a
+        // corridor dialogue opens the same passages, and would otherwise record a visit to an NPC nobody
+        // went near -- which is exactly what happened when both test blocks were bound to test_npc.
+        if (ctx.getOpener() != com.chromecide.lowtalk.api.Opener.NPC
+                && ctx.getOpener() != com.chromecide.lowtalk.api.Opener.ROLE) {
+            pointHudAt(ctx.getPlayer().getUuid(), ctx.getDialogueId());
+            refreshHuds();
+            return;
+        }
         pointHudAt(ctx.getPlayer().getUuid(), ctx.getDialogueId());
         // A passage the dialogue reaches only when its own assertion failed. The tester sees the same text
         // either way; they are simply no longer the thing that has to notice.
@@ -390,7 +399,43 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
     @Override
     public void onStart(@Nonnull DialogueContext ctx) {
         pointHudAt(ctx.getPlayer().getUuid(), ctx.getDialogueId());
-        getLogger().at(Level.INFO).log("[harness] opened %s", ctx.getDialogueId());
+        getLogger().at(Level.INFO).log("[harness] opened %s (%s)", ctx.getDialogueId(), ctx.getOpener());
+        // Opening a dialogue from a block is the whole of what the block-binding checks ask for, and until
+        // LowTalk said how a conversation started there was no way to see it: the harness could tell that
+        // talking_flame had opened and not that a block had opened it.
+        if (ctx.getOpener() == com.chromecide.lowtalk.api.Opener.BLOCK) blockBindingWorked(ctx);
+    }
+
+    /**
+     * A block opened a dialogue, so binding works — for whichever block it was.
+     *
+     * <p>Recording both checks here would be a lie: using a brazier would mark the door as tested. The
+     * conversation says where it is happening, so the block above its own base answers the question. A door
+     * is two blocks and the upper one resolves back to the lower; a brazier is one and nothing points at it.
+     */
+    private void blockBindingWorked(@Nonnull DialogueContext ctx) {
+        var origin = ctx.getOrigin();
+        var world = ctx.getWorld();
+        if (origin == null || world == null) return;
+        int x = (int) Math.floor(origin.x), y = (int) Math.floor(origin.y), z = (int) Math.floor(origin.z);
+
+        boolean twoBlocks;
+        try {
+            var above = com.chromecide.lowtalk.hytale.BlockReads.baseAt(world, x, y + 1, z);
+            twoBlocks = above.x == x && above.y == y && above.z == z;
+        } catch (RuntimeException e) {
+            getLogger().at(Level.WARNING).withCause(e).log("could not tell what kind of block opened %s",
+                    ctx.getDialogueId());
+            return;
+        }
+
+        String id = twoBlocks ? "block.bind.door" : "block.bind.single";
+        if (Checks.byId(id) == null || record.check(id).seen) return;
+        record.markSeen(id);
+        record.flush();
+        refreshHuds();
+        getLogger().at(Level.INFO).log("[harness] seen %s (a %s block at %d %d %d opened %s)",
+                id, twoBlocks ? "two-block" : "one-block", x, y, z, ctx.getDialogueId());
     }
 
     /**
