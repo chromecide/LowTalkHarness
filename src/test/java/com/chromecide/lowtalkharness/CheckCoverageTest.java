@@ -3,6 +3,8 @@ package com.chromecide.lowtalkharness;
 import com.chromecide.lowtalk.parser.Validator;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -133,13 +135,16 @@ class CheckCoverageTest {
 
         List<String> missing = new ArrayList<>();
         for (Checks.Check c : Checks.all()) {
-            String watch = c.autoSeen();
-            if (watch == null) continue;
-            String dialogue = watch.substring(0, watch.indexOf('/'));
-            String passage = watch.substring(watch.indexOf('/') + 1);
-            Set<String> known = passages.get(dialogue);
-            if (known == null) continue;                        // not one of ours; nothing to check against
-            if (!known.contains(passage)) missing.add(c.id() + " watches " + watch);
+            // Both halves. A mistyped failure passage is the worse of the two: the dialogue decides the check
+            // failed, jumps somewhere nothing is watching, and the run record shows a pass.
+            for (String watch : new String[] {c.autoSeen(), c.autoFail()}) {
+                if (watch == null) continue;
+                String dialogue = watch.substring(0, watch.indexOf('/'));
+                String passage = watch.substring(watch.indexOf('/') + 1);
+                Set<String> known = passages.get(dialogue);
+                if (known == null) continue;                    // not one of ours; nothing to check against
+                if (!known.contains(passage)) missing.add(c.id() + " watches " + watch);
+            }
         }
         assertTrue(missing.isEmpty(),
                 "these checks watch a passage that does not exist, so they can never fire:\n  "
@@ -164,5 +169,74 @@ class CheckCoverageTest {
             assertTrue(c.expected().length() > 20, c.id() + " does not say what to expect in any useful detail");
             assertTrue(!c.covers().isEmpty(), c.id() + " names no surface, so no server update can ever flag it");
         }
+    }
+
+    /**
+     * A link to another page of the tree must never be guarded.
+     *
+     * <p>The page links were once guarded on a hand-written sum of the check prefixes behind them. Four checks
+     * were added without extending the sum, every older group had been walked, so the sum was zero and two
+     * whole pages of the tree stopped being offered — silently, because a hidden option looks exactly like a
+     * finished one. The tester reported the new checks "not showing" and nothing in the record disagreed.
+     *
+     * <p>An area may hide itself when there is nothing left in it. Navigation may not.
+     */
+    @Test
+    void linksBetweenPagesOfTheTreeAreNotGuarded() throws Exception {
+        List<String> lines = Files.readAllLines(
+                Path.of("src/main/resources/Server/LowTalk/Dialogues/harness.talk"));
+        List<String> guarded = new ArrayList<>();
+        for (int i = 0; i < lines.size() - 1; i++) {
+            String option = lines.get(i).strip();
+            if (!option.startsWith("-> ") || !option.contains("<<if")) continue;
+            String body = lines.get(i + 1).strip();
+            // a page is a hub passage: start, start_more, start_more2, ...
+            if (body.matches("<<jump start(_\\w+)?>>")) guarded.add((i + 1) + ": " + option);
+        }
+        assertTrue(guarded.isEmpty(),
+                "these options lead to another page of the tree and are guarded, so the page can hide itself:\n  "
+                        + String.join("\n  ", guarded));
+    }
+
+    /**
+     * A passage never speaks two lines in a row.
+     *
+     * <p>Each line in a .talk file is its own dialogue line with its own Continue button, so a sentence
+     * wrapped across two source lines is shown to the player cut in half: they read as far as the wrap, press
+     * Continue, and get the rest. Seventeen passages in this tree were written that way, and walking it meant
+     * "continue, continue, continue to get through basic dialog" — the tester's words.
+     *
+     * <p>The label wraps and the transcript scrolls, so a long line is fine. A wrapped one is not.
+     */
+    @Test
+    void noPassageSpeaksTwoLinesInARow() throws Exception {
+        List<String> lines = Files.readAllLines(
+                Path.of("src/main/resources/Server/LowTalk/Dialogues/harness.talk"));
+        // One passage speaks twice on purpose: the Continue button between two lines is the thing it checks.
+        // It is marked with a comment on the line above rather than exempted by name, so the exception has to
+        // be written down where the next person reads it.
+        // Only inside passages: the file's own header (npc:, title:, include:) is the same shape as prose.
+        int firstPassage = 0;
+        while (firstPassage < lines.size() && !lines.get(firstPassage).startsWith("==")) firstPassage++;
+
+        List<String> split = new ArrayList<>();
+        for (int i = firstPassage; i < lines.size() - 1; i++) {
+            if (!spoken(lines.get(i)) || !spoken(lines.get(i + 1))) continue;
+            boolean deliberate = false;
+            for (int back = i - 1; back >= 0 && back >= i - 3; back--) {
+                if (lines.get(back).startsWith("#") && lines.get(back).contains("on purpose")) deliberate = true;
+                if (lines.get(back).startsWith("==")) break;
+            }
+            if (!deliberate) split.add((i + 1) + ": " + lines.get(i).strip());
+        }
+        assertTrue(split.isEmpty(),
+                "these lines are followed by another spoken line, so the player reads them cut in half:\n  "
+                        + String.join("\n  ", split));
+    }
+
+    /** A line the NPC says: not a comment, a heading, an option, a command, or anything inside a block. */
+    private static boolean spoken(String line) {
+        if (line.isBlank() || Character.isWhitespace(line.charAt(0))) return false;
+        return !line.startsWith("#") && !line.startsWith("==") && !line.startsWith("->") && !line.startsWith("<<");
     }
 }

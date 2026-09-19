@@ -10,6 +10,10 @@
 #      it makes the file longer.
 #   2. A passage that shows something timed waits it out before returning. Two effects on screen at once make a
 #      screenshot ambiguous about which one it caught.
+#   3. An option that leads to an area may be guarded on what is left in that area. An option that leads to
+#      another PAGE never is. The page links were once guarded on a hand-written sum of the prefixes behind
+#      them, and adding four checks without extending the sum hid two whole pages of the tree from the person
+#      walking it -- silently, because a hidden option looks exactly like a finished one.
 #
 # Checks needing a body in the world (blocks, triggers, restarts, the editor) are not here. They are in the
 # check list as gaps with their own steps.
@@ -35,14 +39,14 @@ Harness tester. Pick an area; each option runs one check and comes back.
     <<jump area_world>>
 -> Media <<if remaining("media") > 0>>
     <<jump area_media>>
--> More... <<if remaining("npc") + remaining("basics") + remaining("input") + remaining("random") + remaining("format") + remaining("progress") + remaining("memory") > 0>>
+-> More...
     <<jump start_more>>
 -> Leave
     <<end>>
 
 == start_more
 The rest: this NPC, the language itself, and what gets remembered.
--> This NPC <<if remaining("npc") > 0>>
+-> This NPC <<if remaining("npc") + remaining("state") > 0>>
     <<jump area_npc>>
 -> Choices and flow <<if remaining("basics") > 0>>
     <<jump area_basics>>
@@ -54,10 +58,21 @@ The rest: this NPC, the language itself, and what gets remembered.
     <<jump area_format>>
 -> Objectives and standing <<if remaining("progress") > 0>>
     <<jump area_progress>>
--> Memory <<if remaining("memory") > 0>>
-    <<jump area_memory>>
+-> More...
+    <<jump start_more2>>
 -> Back
     <<jump start>>
+
+# A choice shows at most eight options, so Memory moves here to make room for the player's own area.
+
+== start_more2
+What the player is: what they are called, what they may do, what they know, and what is remembered of them.
+-> Memory <<if remaining("memory") > 0>>
+    <<jump area_memory>>
+-> The player themselves <<if remaining("player") + remaining("perm") + remaining("learn") > 0>>
+    <<jump area_player>>
+-> Back
+    <<jump start_more>>
 
 # ---- notifications ------------------------------------------------------------------------------------------
 
@@ -83,8 +98,7 @@ Notifications appear in the corner and fade by themselves.
 # ---- titles -------------------------------------------------------------------------------------------------
 
 == area_title
-The styles are the game's own, so a server has the ones its version shipped: Default and Major everywhere,
-GoblinBreach and VoidEviction from 0.7. Each should look plainly different.
+The styles are the game's own, so a server has the ones its version shipped: Default and Major everywhere, GoblinBreach and VoidEviction from 0.7. Each should look plainly different.
 -> Default, no style named <<if not checked("title.default")>>
     <<jump check_title_default>>
 -> Default written the old way, as "minor" <<if not checked("title.minor.alias")>>
@@ -261,6 +275,8 @@ This NPC's own name, state and animation. Renaming persists, so put it back when
     <<jump check_npc_rename_restore>>
 -> Turn hostile, then friendly again <<if not checked("npc.attitude")>>
     <<jump check_npc_attitude>>
+-> Go into another state, and back <<if not checked("state.role")>>
+    <<jump check_state_role>>
 -> Back
     <<jump start_more>>
 
@@ -304,6 +320,7 @@ Options can be hidden, shown greyed out, or offered once. The reveal below sets 
     <<jump start_more>>
 
 == check_basics_continue
+# The one passage that speaks twice on purpose: the Continue button between two lines is what it checks.
 The first of two lines. Expect a Continue button rather than the option list.
 And the second. Expect the options back after this one.
 <<jump area_basics>>
@@ -436,15 +453,13 @@ Expect it to fall by ten.
 
 == check_progress_objective
 <<objective Objective_Gather>>
-Expect a tracker entry, and the state above to read "active". Objectives are rough on this version: if the
-client drops here, that is the game's tracker bug rather than this check.
+Expect a tracker entry, and the state above to read "active". Objectives are rough on this version: if the client drops here, that is the game's tracker bug rather than this check.
 <<jump area_progress>>
 
 # ---- memory -------------------------------------------------------------------------------------------------
 
 == area_memory
-Per NPC: we have met {$met ? "before" : "not before"}. Per player: you have opened a tester {$player.visits} time(s).
-Spawn a second tester with /harness npc and compare: the first line differs between them, the second does not.
+Per NPC: we have met {$met ? "before" : "not before"}. Per player: you have opened a tester {$player.visits} time(s). Spawn a second tester with /harness npc and compare: the first line differs between them, the second does not.
 -> Remember me <<if not checked("memory.npc")>>
     <<jump check_memory_npc>>
 -> Count this visit, across every tester <<if not checked("memory.player")>>
@@ -480,3 +495,104 @@ Nothing happens here. It exists to be visited, so visited() has something to ans
 <<set $met = false>>
 Forgotten. The line above should go back to saying we have not met.
 <<jump area_memory>>
+
+# ---- the player -----------------------------------------------------------------------------------------
+#
+# Three checks the dialogue decides for itself where it can. Two of these were gaps until now for the same
+# stated reason -- "it depends on the player" -- which was true of the naive way of asking and not of the
+# question itself. perm() cannot be tested by giving one player two permission states, but it can be caught
+# answering the same way to a node they hold and a node nobody does. knows() cannot be tested against whatever
+# this player happens to have learned, but the recipe can be forgotten first.
+
+== area_player
+The player themselves. Each of these checks itself where it can, so you mostly just read what happened.
+-> The names in text <<if not checked("player.npc.names")>>
+    <<jump check_player_npc_names>>
+-> What the player is allowed to do <<if not checked("perm.check")>>
+    <<jump check_perm>>
+-> Learning a recipe <<if not checked("learn.recipe")>>
+    <<jump check_learn_recipe>>
+-> Back
+    <<jump start_more2>>
+
+== check_player_npc_names
+{player}, I am {npc}. Your name should be your own and mine should be this tester's, and neither should read as braces or as the other one.
+-> Back
+    <<jump area_player>>
+
+== check_perm
+Permissions. You hold lowtalk.creator; nobody holds lowtalk.harness.nobody.holds.this. perm() should tell them apart.
+<<if perm("lowtalk.creator") and not perm("lowtalk.harness.nobody.holds.this")>>
+    <<jump check_perm_ok>>
+<<else>>
+    <<jump check_perm_bad>>
+<<endif>>
+
+== check_perm_ok
+Correct: true for the one you hold, false for the one nobody was granted. A line guarded on a permission will show to the right people.
+-> Back
+    <<jump area_player>>
+
+== check_perm_bad
+Wrong, or my assertion is. What each one actually answers:
+  perm("lowtalk.creator") = {perm("lowtalk.creator")}, read directly = {probe_perm("lowtalk.creator")}
+  perm("lowtalk.harness.nobody.holds.this") = {perm("lowtalk.harness.nobody.holds.this")}, read directly = {probe_perm("lowtalk.harness.nobody.holds.this")}
+Recorded as a failure already, and written to the log.
+-> Back
+    <<jump area_player>>
+
+== check_learn_recipe
+A recipe you do not know yet: the Alchemy Cauldron. I will make sure you have forgotten it first, so this does not depend on what you already knew.
+<<forget_recipe Alchemy_Cauldron_Recipe_Generated_0>>
+<<if knows("Alchemy_Cauldron_Recipe_Generated_0")>>
+    <<jump check_learn_recipe_bad>>
+<<endif>>
+<<learn Alchemy_Cauldron_Recipe_Generated_0>>
+<<if knows("Alchemy_Cauldron_Recipe_Generated_0")>>
+    <<jump check_learn_recipe_ok>>
+<<else>>
+    <<jump check_learn_recipe_bad>>
+<<endif>>
+
+== check_learn_recipe_ok
+knows() was false before and is true now. Now the client half: open your crafting menu and check the Alchemy Cauldron is listed. /harness feedback if not.
+-> Back
+    <<jump area_player>>
+
+== check_learn_recipe_bad
+Wrong, or my assertion is. What each one actually answers now:
+  knows() = {knows("Alchemy_Cauldron_Recipe_Generated_0")}, read directly = {probe_knows("Alchemy_Cauldron_Recipe_Generated_0")}
+Recorded as a failure already, and written to the log.
+-> Back
+    <<jump area_player>>
+
+# ---- the NPC's own state --------------------------------------------------------------------------------
+#
+# This role inherits Idle and Stopped from Template_Temple. The check decides itself: the state is read back
+# after each change, so nobody has to judge whether an NPC's behaviour looks different.
+
+== check_state_role
+My role inherits two states from its template, Idle and Stopped. Watch: into Stopped, then back to Idle.
+<<state Stopped>>
+<<if not npc_in_state("Stopped")>>
+    <<state Idle>>
+    <<jump check_state_role_bad>>
+<<endif>>
+<<state Idle>>
+<<if npc_in_state("Idle")>>
+    <<jump check_state_role_ok>>
+<<else>>
+    <<jump check_state_role_bad>>
+<<endif>>
+
+== check_state_role_ok
+Both took: I reported Stopped while stopped and Idle once back. A dialogue can drive an NPC's role state.
+-> Back
+    <<jump area_npc>>
+
+== check_state_role_bad
+Wrong, or my assertion is. What I can see of my own state:
+  in Stopped = {npc_in_state("Stopped")}, in Idle = {npc_in_state("Idle")}
+Recorded as a failure already, and written to the log. I have put myself back to Idle.
+-> Back
+    <<jump area_npc>>

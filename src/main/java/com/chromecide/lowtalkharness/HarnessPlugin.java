@@ -158,6 +158,62 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
                 "True when this server's own title-style enum has that style.",
                 (ctx, args) -> args.isEmpty() ? Boolean.FALSE
                         : Boolean.valueOf(com.chromecide.lowtalk.hytale.compat.EventTitles.knows(String.valueOf(args.get(0)))));
+        // Test-only, and deliberately not in LowTalk: <<learn>> only adds a string to the player's known set,
+        // so "learn it and see that knows() is true" is a tautology unless the recipe is genuinely unknown
+        // first. Forgetting it is the setup step, and a released dialogue mod has no business shipping one.
+        api.registerCommand("forget_recipe", "<<forget_recipe Alchemy_Cauldron>>",
+                "Harness only: make the player not know a recipe, so learning it can be observed.",
+                (ctx, args) -> {
+                    if (args.isEmpty()) return "forget_recipe needs a recipe id";
+                    // DialogueContext hands out the NPC's entity but not the player's, so this goes through
+                    // PlayerRef. Worth noting as an API gap rather than working around silently: every effect
+                    // LowTalk ships that touches the player reaches for the same thing internally.
+                    Ref<EntityStore> ref = ctx.getPlayer().getReference();
+                    if (ref == null || !ref.isValid()) return "the player is not in a world";
+                    com.hypixel.hytale.builtin.crafting.CraftingPlugin.forgetRecipe(ref, args.get(0), ref.getStore());
+                    return null;
+                });
+        // Reading an NPC's state back. LowTalk can put an NPC into a state and offers no way to ask which one
+        // it is in, so <<state>> was untestable by anything but watching behaviour change -- and the tester's
+        // role was believed to have no states at all, which turned out to be wrong: Template_Temple, which it
+        // inherits from, declares Idle and Stopped.
+        api.registerFunction("npc_in_state", "npc_in_state(\"Stopped\")",
+                "Harness only: true when this dialogue's NPC is in that state of its role.",
+                (ctx, args) -> {
+                    if (args.isEmpty()) return Boolean.FALSE;
+                    Ref<EntityStore> npc = ctx.getNpcRef();
+                    var store = ctx.getEntityStore();
+                    if (npc == null || store == null || !npc.isValid()) return Boolean.FALSE;
+                    var support = com.hypixel.hytale.server.npc.role.support.StateSupport.get(npc, store);
+                    String wanted = String.valueOf(args.get(0));
+                    int index = support.getStateHelper().getStateIndex(wanted);
+                    boolean in = index >= 0 && support.inState(index);
+                    getLogger().at(Level.INFO).log("[harness] npc_in_state(%s): index=%d, now in '%s' (index %d) -> %s",
+                            wanted, index, support.getStateName(), support.getStateIndex(), in);
+                    return in;
+                });
+        // The same questions perm() and knows() answer, asked without going through LowTalk, and logged. When
+        // a self-judging check fails, this says whether the feature disagreed with the game or the assertion
+        // disagreed with reality.
+        api.registerFunction("probe_perm", "probe_perm(\"lowtalk.creator\")",
+                "Harness only: hasPermission, read directly and logged.",
+                (ctx, args) -> {
+                    boolean held = !args.isEmpty() && ctx.getPlayer().hasPermission(String.valueOf(args.get(0)));
+                    getLogger().at(Level.INFO).log("[harness] probe_perm(%s) = %s", args, held);
+                    return held;
+                });
+        api.registerFunction("probe_knows", "probe_knows(\"X_Recipe_Generated_0\")",
+                "Harness only: the player's known-recipe set, read directly and logged.",
+                (ctx, args) -> {
+                    Ref<EntityStore> ref = ctx.getPlayer().getReference();
+                    var player = ref == null || !ref.isValid() ? null
+                            : ref.getStore().getComponent(ref, com.hypixel.hytale.server.core.entity.entities.Player.getComponentType());
+                    var known = player == null ? null : player.getPlayerConfigData().getKnownRecipes();
+                    boolean has = known != null && !args.isEmpty() && known.contains(String.valueOf(args.get(0)));
+                    getLogger().at(Level.INFO).log("[harness] probe_knows(%s) = %s (%d known recipes)",
+                            args, has, known == null ? -1 : known.size());
+                    return has;
+                });
         api.registerFunction("remaining", "remaining(\"title\")",
                 "How many harness checks whose id starts with that prefix have not been run yet.",
                 (ctx, args) -> {
@@ -236,6 +292,16 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
     public void onNode(@Nonnull DialogueContext ctx, @Nonnull String node) {
         whereabouts.put(ctx.getPlayer().getUuid(), new Where(ctx.getDialogueId(), node));
         pointHudAt(ctx.getPlayer().getUuid(), ctx.getDialogueId());
+        // A passage the dialogue reaches only when its own assertion failed. The tester sees the same text
+        // either way; they are simply no longer the thing that has to notice.
+        for (Checks.Check c : Checks.failedByPassage(ctx.getDialogueId(), node)) {
+            record.markSeen(c.id());
+            record.decide(c.id(), RunRecord.Verdict.FAIL, "the dialogue's own check of this did not hold");
+            getLogger().at(Level.WARNING).log("[harness] %s failed its own assertion", c.id());
+            record.flush();
+            refreshHuds();
+        }
+
         List<Checks.Check> hit = Checks.forPassage(ctx.getDialogueId(), node);
         if (hit.isEmpty()) {
             refreshHuds();
@@ -292,6 +358,14 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
     @Override
     public void onCommand(@Nonnull DialogueContext ctx, @Nonnull String command,
                           @Nonnull List<String> args, @Nullable String error) {
+        // Every command our own tree runs, with its arguments. A check that judges itself can only report that
+        // its assertion did not hold; it cannot say whether the feature or the assertion was wrong. This is
+        // the difference between those two, and it costs one log line per option anyone picks.
+        if (ctx.getDialogueId().startsWith("harness")) {
+            getLogger().at(Level.INFO).log("[harness] ran <<%s%s>>%s", command,
+                    args.isEmpty() ? "" : " " + String.join(" ", args),
+                    error == null ? "" : "  -> ERROR: " + error);
+        }
         if (error == null) return;
         Where where = whereabouts.get(ctx.getPlayer().getUuid());
         for (Checks.Check c : Checks.forPassage(ctx.getDialogueId(), where == null ? "" : where.node())) {

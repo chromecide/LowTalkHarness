@@ -57,10 +57,21 @@ public final class Checks {
      * @param station  the station number when there is one, else null
      * @param autoSeen the dialogue and passage that mean "this was exercised", as "dialogue/passage", or null
      *                 when nothing observable says so and only a person can
+     * @param autoFail the passage that means "this was exercised and it was wrong", for checks the dialogue can
+     *                 decide for itself. Where a condition can be written down, writing it down beats asking a
+     *                 person to notice: {@code perm()} returning true for a permission nobody holds is not
+     *                 something anyone would spot by looking at a line of text.
      */
     public record Check(@Nonnull String id, @Nonnull Kind kind, @Nonnull String title, @Nonnull List<String> steps,
                         @Nonnull String expected, @Nonnull List<String> covers, @Nullable Integer station,
-                        @Nullable String autoSeen) {}
+                        @Nullable String autoSeen, @Nullable String autoFail) {
+
+        public Check(@Nonnull String id, @Nonnull Kind kind, @Nonnull String title, @Nonnull List<String> steps,
+                     @Nonnull String expected, @Nonnull List<String> covers, @Nullable Integer station,
+                     @Nullable String autoSeen) {
+            this(id, kind, title, steps, expected, covers, station, autoSeen, null);
+        }
+    }
 
     private static final Map<String, Check> BY_ID = new LinkedHashMap<>();
 
@@ -72,6 +83,19 @@ public final class Checks {
     private static void tree(String id, String passage, String title, String expected, String... covers) {
         add(new Check(id, Kind.STATION, title, List.of("Talk to the harness tester and pick it."),
                 expected, List.of(covers), null, "harness/" + passage));
+    }
+
+    /**
+     * A tree check the dialogue decides for itself: one passage means it worked, another means it did not.
+     *
+     * <p>Strictly better than a tester's eyes where the claim can be written as a condition, because it cannot
+     * be misread, misremembered or clicked past. The tester still sees what happened; they just are not the
+     * instrument.
+     */
+    private static void judged(String id, String okPassage, String badPassage, String title, String expected,
+                               String... covers) {
+        add(new Check(id, Kind.STATION, title, List.of("Talk to the harness tester and pick it."),
+                expected, List.of(covers), null, "harness/" + okPassage, "harness/" + badPassage));
     }
 
     /** A check still driven from LowTalk's own test corridor, because the tree cannot do it yet. */
@@ -251,23 +275,24 @@ public final class Checks {
                         "Trigger a dialogue using <<run>>.", "Set it true, reload, and trigger it again."),
                 "Refused while off, runs while on. The only command behind a security flag.",
                 "lowtalk:run", "lowtalk:config");
-        gap("learn.recipe", Kind.WORLD, "<<learn>> teaches a recipe, and knows() sees it",
-                List.of("Open a dialogue with <<learn>> for a recipe the player lacks.",
-                        "Check the crafting menu and a line guarded by knows()."),
-                "The recipe becomes available and knows() returns true. Depends on what the player already knows, "
-                        + "so it cannot live in a shared tree.",
+        judged("learn.recipe", "check_learn_recipe_ok", "check_learn_recipe_bad",
+                "<<learn>> teaches a recipe and knows() sees it",
+                "knows() is false for the recipe, true after <<learn>>, and the crafting menu offers it. The "
+                        + "dialogue forgets the recipe first, so the result does not depend on what this player "
+                        + "already knew.",
                 "lowtalk:learn", "lowtalk:knows", "CraftingRecipe");
-        gap("state.role", Kind.WORLD, "<<state>> puts an NPC's role into a named state",
-                List.of("Open a dialogue with <<state>> naming a state from the NPC's role JSON."),
-                "The NPC's behaviour changes. Needs a role defining named states; the tester's does not.",
+        judged("state.role", "check_state_role_ok", "check_state_role_bad",
+                "<<state>> puts an NPC's role into a named state",
+                "The tester goes into Stopped and back to Idle, and reports which state it is in at each step. "
+                        + "Its role inherits both from Template_Temple.",
                 "lowtalk:state", "NPCPlugin");
-        gap("perm.check", Kind.SETUP, "perm() reads the player's permissions",
-                List.of("Guard a line with perm(\"some.node\").", "Open it with and without the permission."),
-                "The line appears only with the permission. Needs the same player in two permission states.",
+        judged("perm.check", "check_perm_ok", "check_perm_bad", "perm() reads the player's permissions",
+                "perm() is true for a permission the player holds and false for one nobody has been granted. "
+                        + "Weaker than the same player in two permission states, which no dialogue can arrange, "
+                        + "but it does catch a perm() that answers the same way to everything.",
                 "lowtalk:perm");
-        gap("player.npc.names", Kind.STATION, "{player} and {npc} interpolate the right names",
-                List.of("Open any dialogue whose text uses {player} and {npc}."),
-                "Both read the actual names rather than the literal braces.",
+        tree("player.npc.names", "check_player_npc_names", "{player} and {npc} interpolate the right names",
+                "The line reads your own name and the tester's, not the literal braces and not each other's.",
                 "lowtalk:player", "lowtalk:npc");
         gap("editor.add.every.command", Kind.EDITOR, "Every command can be found in the editor's Add menu",
                 List.of("Open the in-game editor on a passage.",
@@ -352,6 +377,14 @@ public final class Checks {
         String key = dialogueId + "/" + passage;
         List<Check> out = new ArrayList<>();
         for (Check c : BY_ID.values()) if (key.equals(c.autoSeen())) out.add(c);
+        return out;
+    }
+
+    /** The checks a LowTalk passage means have been exercised and found wanting. */
+    public static List<Check> failedByPassage(@Nonnull String dialogueId, @Nonnull String passage) {
+        String key = dialogueId + "/" + passage;
+        List<Check> out = new ArrayList<>();
+        for (Check c : BY_ID.values()) if (key.equals(c.autoFail())) out.add(c);
         return out;
     }
 
