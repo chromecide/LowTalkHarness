@@ -1,57 +1,71 @@
 # What is not covered, and why
 
-The check list in `Checks.java` includes things that have no station and no way to be tracked automatically.
-They are listed as checks anyway, with nothing to watch, so they appear in `/harness todo` as never run rather
-than not appearing at all. A gap you can see is a gap someone can close.
+Eight of the sixty-seven checks have nothing driving them. They are in the list anyway, with no passage to
+watch, so they show in `/harness todo` as never run rather than not appearing at all. A gap you can see is a
+gap someone can close.
 
 This file is why each one is a gap, which is usually more interesting than the gap itself.
 
-## No station can exist for these
+Written against LowTalk 0.4.0 on Hytale 0.6.8, after the walk that closed five of the entries this file used
+to have.
 
-**`<<run>>` (`run.command.gated`).** The only command behind a security flag, and a station that runs console
-commands is not something to ship to creators. It also needs testing in two states — `AllowRunCommand` off then
-on — and a station cannot change server config halfway through.
+## Needs the server set up differently
 
-**`perm()` (`perm.check`).** Needs the same player with and without a permission. One station, one permission
-state.
+**`run.command.gated`.** The only command behind a security flag, and it has to be seen in both states —
+`AllowRunCommand` off, then on. A dialogue cannot change server config halfway through, and a station that
+runs console commands is not something to hand a creator.
 
-**`on: join` (`on.join`).** Fires when a player finishes loading into a world. Requires a disconnect and
-reconnect, which no dialogue can ask for.
+**`layout.chain`.** Four levels resolve in order — dialogue, pack, API, server config — and `ForceLayout`
+overrides all of them. Checking it means editing config between attempts. Four documented levels, none of them
+ever verified.
 
-**Layout and history (`layout.chain`).** Four levels resolve in order — dialogue, pack, API, server config —
-and `ForceLayout` overrides all of them. Checking it means editing config between attempts. Four documented
-levels, none of them ever verified.
+**`on.join`.** A dialogue with `on: join` opens when a player finishes loading into a world. Requires a
+disconnect and a reconnect, which no dialogue can ask for.
 
-**Restart persistence (`block.bind.survives.restart`, `npc.rename.survives.restart`).** The claim is that
-something survives a server bounce. Station 12 has promised renamed NPCs persist since the feature shipped and
-nothing has ever checked it.
+## Needs something in the world that is not there
 
-## No station exists yet, but could
+**`trigger.volume`.** LowTalk registers `LowTalkDialogue`, `LowTalkCondition` and `LowTalkSetVariable` with the
+trigger volume plugin on every boot, and nothing exercises any of them. It needs a volume placed in the world
+rather than an NPC to talk to.
 
-**`<<attitude>>` (`attitude.set`).** Needs an NPC whose behaviour visibly changes. The corridor's testers are
-deliberately placid, so turning one hostile mid-corridor would be unpleasant to walk past afterwards.
+**`state.role`.** `<<state>>` needs an NPC whose role defines two real states. The harness tester does not
+have one: asked for its own list it reports `Idle` and `start`, and `start` is the engine's placeholder, with
+no sub-states, so entering it throws inside the game. The game's own `Test_State_*` roles define several and
+would close this — the same way `Goblin_Scavenger` closed `attitude.behaviour`.
 
-**`<<learn>>` and `knows()` (`learn.recipe`).** Needs a recipe the player does not already know, which depends
-on the player, so a station would pass or fail depending on who walked up to it.
-
-**`<<state>>` (`state.role`).** Needs an NPC role that defines named states. No station NPC has one.
-
-**`{player}` and `{npc}` (`player.npc.names`).** Used exactly once in the whole corridor. Not hard to cover,
-just never done.
-
-**Trigger volumes (`trigger.volume`).** LowTalk registers `LowTalkDialogue`, `LowTalkCondition` and
-`LowTalkSetVariable` with the trigger volume plugin on every boot, and nothing exercises any of them. It needs
-a volume placed in the world rather than an NPC to talk to.
+**`objective.talk.task`.** An objective completed by talking to a second NPC: start `Objective_LowTalk_Talk`
+at station 12, then walk to station 1. It crosses two stations, so no single passage marks it done. Worth
+knowing that Hytale's objective system is rough ground — see the warning in the format guide — so a failure
+here is as likely to be the game's as ours.
 
 ## The editor
 
 **`editor.add.every.command`, `editor.rows.render`.** The in-game editor is the largest surface in the mod and
 has no automated coverage at all — no station can open a UI page and judge it. Every editor bug this month was
 found by a person using it: a reward row that dropped the client, a dropdown that would not open, a panel that
-ran off the bottom of the screen, and an Add menu that added the wrong command. That is four client-visible
-faults in one surface, found by luck rather than by testing.
+ran off the bottom of the screen, and an Add menu that added the wrong command. Four client-visible faults in
+one surface, found by luck rather than by testing.
 
-Worth remembering when weighing what to build next.
+Still the most valuable thing left to build.
+
+## What closed, and how
+
+Kept because the reasons these were once written off are worth remembering — most of them were conclusions
+about the obvious approach rather than about the question.
+
+- **`perm.check`** — "needs the same player with and without a permission". True of the naive approach, and
+  an Admin holds the wildcard so nothing comes back false either. A permission can be written as a deny with
+  a leading minus, user entries are read before group ones, and a deny beats the wildcard. The tester denies
+  itself a node, asks, grants it, asks again, and puts the player back.
+- **`learn.recipe`** — "depends on what the player already knows". Only if you do not control it. The harness
+  forgets the recipe first. Closing it found the runtime's command ordering bug, so it is now that fix's
+  regression test.
+- **`player.npc.names`** — never done, no reason. Done.
+- **`npc.rename.survives.restart`** — promised since the feature shipped, never checked, and false when
+  finally checked: nothing marked the entity dirty, so the rename was never saved.
+- **`attitude.set`, now `attitude.behaviour`** — "the corridor's testers are deliberately placid". The answer
+  was an NPC that is not: `/harness fighter` spawns a goblin. Closing it produced three facts about attitude
+  that no amount of reading the code had produced, and one new LowTalk command.
 
 ## Blind spots the server can move under us
 
@@ -59,5 +73,6 @@ Worth remembering when weighing what to build next.
 re-running, lists classes that **changed, are used by LowTalk, and are named by no check**. Those are the
 places a Hytale update can break something with nothing watching.
 
-Run against `0.7.0-pre.2.1 -> 0.7.0-pre.3` it names fifteen, including `ISpawnProvider` — which is exactly the
-class whose signature change broke the build on pre.3, and which no check mentions to this day.
+Run against `0.6.7 -> 0.6.8` it named none, because that update changed one Windows-only class. Run against
+`0.7.0-pre.2.1 -> 0.7.0-pre.3` it named fifteen, including `ISpawnProvider` — the class whose signature change
+broke the build on pre.3, and which no check mentions to this day.
