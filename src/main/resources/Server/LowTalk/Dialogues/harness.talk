@@ -454,6 +454,12 @@ Standing with my group is {reputation()}, rank "{rank()}". Objective_Gather read
     <<jump check_progress_reputation_down>>
 -> Start Objective_Gather <<if not checked("progress.objective")>>
     <<jump check_progress_objective>>
+-> Give me the three dirt it wants <<if not (objective("Objective_Gather") == "none")>>
+    <<jump objective_dirt>>
+-> Cancel Objective_Gather <<if not (objective("Objective_Gather") == "none")>>
+    <<objective cancel Objective_Gather>>
+    Cancelled. The tracker should go, and the harness panel come back.
+    <<jump area_progress>>
 -> Back
     <<jump start_more>>
 
@@ -469,7 +475,15 @@ Expect it to fall by ten.
 
 == check_progress_objective
 <<objective Objective_Gather>>
-Expect a tracker entry, and the state above to read "active". Objectives are rough on this version: if the client drops here, that is the game's tracker bug rather than this check.
+Expect a tracker entry, and the state above to read "active". While it is tracking it sits where the harness panel does, so the panel goes; finishing or cancelling it brings the panel back. Objectives are rough on this version: if the client drops here, that is the game's tracker bug rather than this check.
+<<jump area_progress>>
+
+# An objective left running hides the panel for the rest of the walk, and a Gather task wants three dirt
+# nobody is carrying in a fresh world. Handing them over is the quickest way out; cancelling is the other.
+
+== objective_dirt
+<<give Soil_Dirt 3>>
+Three Soil_Dirt, which is what the Gather task counts. If it does not complete with them in hand, say so with /harness feedback: a Gather task may only count what you dig up, and nobody has tried handing them over before.
 <<jump area_progress>>
 
 # ---- memory -------------------------------------------------------------------------------------------------
