@@ -284,6 +284,12 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
 
     // ---- the panel
 
+    /** Turn the panel on for one player, if it is not already. Returns whether anything changed. */
+    public boolean showHud(@Nonnull PlayerRef playerRef, @Nonnull Ref<EntityStore> entity) {
+        if (huds.containsKey(playerRef.getUuid())) return false;
+        return toggleHud(playerRef, entity);
+    }
+
     /** Turn the panel on or off for one player. Returns whether it is now on. */
     public boolean toggleHud(@Nonnull PlayerRef playerRef, @Nonnull Ref<EntityStore> entity) {
         Player player = entity.getStore().getComponent(entity, Player.getComponentType());

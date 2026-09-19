@@ -36,7 +36,7 @@ public class HarnessCommand extends AbstractCommandCollection {
         this.requirePermission(PERMISSION);
         this.addSubCommand(new Todo(plugin));
         this.addSubCommand(new Hud(plugin));
-        this.addSubCommand(new Npc());
+        this.addSubCommand(new Npc(plugin));
         this.addSubCommand(new Fighter());
         this.addSubCommand(new Reset(plugin));
         this.addSubCommand(new Show(plugin));
@@ -158,10 +158,13 @@ public class HarnessCommand extends AbstractCommandCollection {
         }
     }
 
-    /** Put the tester NPC in front of you. The tree that runs the checks is bound to it. */
+    /** Put the tester NPC in front of you, and the panel on. The tree that runs the checks is bound to it. */
     static class Npc extends com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand {
-        Npc() {
-            super("npc", "Spawn the harness tester NPC where you are standing");
+        private final HarnessPlugin plugin;
+
+        Npc(HarnessPlugin plugin) {
+            super("npc", "Spawn the harness tester NPC where you are standing, and show the panel");
+            this.plugin = plugin;
             this.requirePermission(PERMISSION);
         }
 
@@ -177,7 +180,14 @@ public class HarnessCommand extends AbstractCommandCollection {
                 context.sendMessage(Message.raw("Could not work out where you are standing."));
                 return;
             }
-            HarnessNpc.spawnFacing(store, transform.getPosition(), line -> context.sendMessage(Message.raw(line)));
+            if (!HarnessNpc.spawnFacing(store, transform.getPosition(), line -> context.sendMessage(Message.raw(line)))) {
+                return;
+            }
+            // Asking for the tester is asking to start testing, and the panel is the only thing that says
+            // what a walk cannot find on its own. Off by default everywhere else; on from here.
+            if (plugin.showHud(player, entity)) {
+                context.sendMessage(Message.raw("Panel on. /harness hud turns it off."));
+            }
         }
     }
 

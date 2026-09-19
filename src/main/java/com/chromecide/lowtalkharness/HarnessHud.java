@@ -30,6 +30,8 @@ public final class HarnessHud extends CustomUIHud {
     private final HarnessPlugin plugin;
     /** The dialogue the player is in, which decides what the panel is about. Null when they are not talking. */
     @Nullable private volatile String dialogueId;
+    /** What the panel is currently listing, for its heading. Set by {@link #scope()} as it decides. */
+    private String scopeName = "LowTalk harness";
 
     public HarnessHud(@Nonnull HarnessPlugin plugin, @Nonnull PlayerRef playerRef) {
         super(playerRef, KEY);
@@ -66,7 +68,7 @@ public final class HarnessHud extends CustomUIHud {
         int toRun = here.size() - t[1];
 
         StringBuilder rows = new StringBuilder();
-        rows.append(label(title(here), 13, "#8fd0ff", true));
+        rows.append(label(title(), 13, "#8fd0ff", true));
         rows.append(label((toRun == 0 ? "all " + here.size() + " run" : toRun + " of " + here.size() + " to run")
                 + (t[3] > 0 ? "   " + t[3] + " failed" : ""), 12, t[3] > 0 ? "#ff9d8a" : "#96a9be", false));
 
@@ -120,20 +122,43 @@ public final class HarnessHud extends CustomUIHud {
         return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ");
     }
 
-    /** The checks this panel is about: the station being talked to, or everything when not in a dialogue. */
+    /**
+     * The checks this panel is about: the ones in the dialogue being talked to, or — when not talking — the
+     * ones walking the tree will never reach.
+     *
+     * <p>That second case is the useful one. The tester's tree offers what it has left, so a walk finds its
+     * own work; what gets forgotten is everything else. A block to bind and use, a corridor station sixty
+     * blocks away, a restart to set up, the editor. Those have no passage and no option, and the only thing
+     * that reminds anyone they exist is this panel.
+     */
     private List<Checks.Check> scope() {
         String id = dialogueId;
-        if (id == null) return Checks.all();
-        List<Checks.Check> out = new ArrayList<>();
-        for (Checks.Check c : Checks.all()) {
-            if (c.autoSeen() != null && c.autoSeen().startsWith(id + "/")) out.add(c);
+        if (id != null) {
+            List<Checks.Check> here = new ArrayList<>();
+            for (Checks.Check c : Checks.all()) {
+                if (c.autoSeen() != null && c.autoSeen().startsWith(id + "/")) here.add(c);
+            }
+            if (!here.isEmpty()) {
+                scopeName = id;
+                return here;
+            }
         }
-        return out.isEmpty() ? Checks.all() : out;
+        List<Checks.Check> byHand = new ArrayList<>();
+        for (Checks.Check c : Checks.all()) if (!walkable(c)) byHand.add(c);
+        if (byHand.isEmpty()) {
+            scopeName = "LowTalk harness";
+            return Checks.all();
+        }
+        scopeName = "by hand";
+        return byHand;
     }
 
-    private String title(List<Checks.Check> here) {
-        String id = dialogueId;
-        if (id == null || here.size() == Checks.all().size()) return "LowTalk harness  " + plugin.record().serverVersion();
-        return id + "  " + plugin.record().serverVersion();
+    /** True when the tester's own tree will offer this check; those need no reminding. */
+    private static boolean walkable(Checks.Check c) {
+        return c.station() == null && c.autoSeen() != null && c.autoSeen().startsWith("harness/");
+    }
+
+    private String title() {
+        return scopeName + "  " + plugin.record().serverVersion();
     }
 }
