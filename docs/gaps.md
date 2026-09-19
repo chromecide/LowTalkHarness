@@ -31,7 +31,7 @@ rather than an NPC to talk to.
 **`state.role`.** `<<state>>` needs an NPC whose role defines two real states. The harness tester does not
 have one: asked for its own list it reports `Idle` and `start`, and `start` is the engine's placeholder, with
 no sub-states, so entering it throws inside the game. The game's own `Test_State_*` roles define several and
-would close this — the same way `Goblin_Scavenger` closed `attitude.behaviour`.
+would close this — the same way a role that can fight closed `attitude.behaviour`.
 
 **`objective.talk.task`.** An objective completed by talking to a second NPC: start `Objective_LowTalk_Talk`
 at station 12, then walk to station 1. It crosses two stations, so no single passage marks it done. Worth
@@ -69,14 +69,6 @@ about the obvious approach rather than about the question.
 
 ## Blind spots the server can move under us
 
-`whatChanged` compares the classes in two server jars. It says nothing about **assets**, and assets move
-too: `Goblin_Scavenger` exists on 0.6.8 and not on 0.7.0-pre.3.1, which is why the fighter check spawned
-nothing on the pre-release line and said so only in the tester's chat. A check that names a role, a particle,
-a recipe or a weather is resting on an asset id, and nothing compares those between versions.
-
-The harness now tries a list of roles rather than one, which survives a rename; the general problem is open.
-
-
 `./gradlew whatChanged <old> <new>` compares two archived server jars and, as well as naming the checks worth
 re-running, lists classes that **changed, are used by LowTalk, and are named by no check**. Those are the
 places a Hytale update can break something with nothing watching.
@@ -84,3 +76,9 @@ places a Hytale update can break something with nothing watching.
 Run against `0.6.7 -> 0.6.8` it named none, because that update changed one Windows-only class. Run against
 `0.7.0-pre.2.1 -> 0.7.0-pre.3` it named fifteen, including `ISpawnProvider` — the class whose signature change
 broke the build on pre.3, and which no check mentions to this day.
+
+It compares **classes**, though, and assets move too. `Goblin_Scavenger` exists on 0.6.8 and not on
+0.7.0-pre.3.1, which is why the fighter check spawned nothing on the pre-release line and said so only in the
+tester's chat. Every check that names a role, a particle, a recipe or a weather rests on an asset id that can
+move with nothing watching. The fighter tries a list of roles now, which survives one rename; comparing the
+asset maps of two versions the way whatChanged compares their classes is not done.
