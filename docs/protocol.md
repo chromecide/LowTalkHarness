@@ -87,6 +87,14 @@ A fix means a new build, which means a new build id, which means phase 1 again. 
 name, plus whatever `./gradlew whatChanged <old> <new>` names if the Hytale server also moved. Not the whole
 tree — that is what the per-check records are for.
 
+**During development, re-testing is scoped to the change.** A diff confined to one surface needs the checks
+covering that surface, and the `covers` list on each check is what says which those are. The commit has to
+state that the diff is confined, because that is a judgement and judgements should be written down where
+someone can disagree with them. A change to the runtime, the parser or the set of commands is never confined:
+walk the tree.
+
+This scoping is for the working day. It is not what a release rests on — see the gate.
+
 The tester hides an option once its check has run, so put the ones you mean to re-run back first:
 `/harness reset title` for a group, `/harness reset all` before a release walk. Results are kept until then,
 carried over from the build that saw them and reported as such, which is the honest reading: evidence about a
@@ -113,12 +121,23 @@ If one of these keeps being broken, it should become enforcement rather than a s
 
 ## The release gate
 
+**The full tree is walked again on the final jar, immediately before tagging, every time.** Not the checks
+the last fix touched — all of them. This is the one place the scoping above does not apply, and it is not
+negotiable however small the last change looked.
+
+Why, in Justin's words: *"I don't want a repeat of 0.3.0 where i discovered a game breaking bug seconds after
+tagging."* A tag is public and permanent in a way a build is not. The walk costs twenty minutes; finding out
+afterwards costs a point release and the thing this project is trying hardest to avoid, which is a first
+impression of a mod that does not work.
+
 Before a LowTalk version is tagged:
 
-1. One clean walk on the **final jar**, on the **release line** server (the pre-release line is informative,
-   never a gate — LowTalk ships against the release line).
+1. One clean walk of the **whole tree** on the **final jar**, on the **release line** server (the pre-release
+   line is informative, never a gate — LowTalk ships against the release line), run *after* the last change
+   and *before* the tag, with nothing built in between.
 2. Every result stamped with that jar's build id. A pass carried over from an earlier build does not count
-   towards the gate, however recently it was observed.
+   towards the gate, however recently it was observed. If a fault is found during the walk, the fix makes a
+   new jar and the walk starts again — that is the cost, and it is the point.
 3. Zero outstanding feedback: everything reported is fixed, failed with a reason, or moved to gaps.md.
 4. Every gap listed in gaps.md with why it has no station.
 5. The built jar booted on a plain server, not just the dev one — see the mod's own release notes for why.
