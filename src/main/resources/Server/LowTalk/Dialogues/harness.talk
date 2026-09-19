@@ -91,9 +91,9 @@ GoblinBreach and VoidEviction from 0.7. Each should look plainly different.
     <<jump check_title_minor_alias>>
 -> Major <<if not checked("title.major")>>
     <<jump check_title_major>>
--> GoblinBreach (0.7 and later) <<if not checked("title.goblinbreach")>>
+-> GoblinBreach (0.7 and later) <<if has_title_style("GoblinBreach") and not checked("title.goblinbreach")>>
     <<jump check_title_goblinbreach>>
--> VoidEviction (0.7 and later) <<if not checked("title.voideviction")>>
+-> VoidEviction (0.7 and later) <<if has_title_style("VoidEviction") and not checked("title.voideviction")>>
     <<jump check_title_voideviction>>
 -> Back
     <<jump start>>

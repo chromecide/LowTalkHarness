@@ -87,6 +87,8 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
                         + "(%d pass, %d fail), %d still to run, %d pieces of feedback. Record: %s",
                 version, build, Checks.ids().size(), t[0], t[1], t[2], t[3], Checks.ids().size() - t[1],
                 record.feedback().size(), record.file());
+        skipWhatThisServerCannotDo();
+
         List<String> carried = record.fromAnotherBuild(Checks.ids());
         if (!carried.isEmpty()) {
             getLogger().at(Level.INFO).log(
@@ -108,6 +110,31 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
     }
 
     /**
+     * Record, as a skip, anything this server has no way of doing.
+     *
+     * <p>Not a judgement about behaviour — a fact about the server, read off its own enum and printed in the
+     * boot log next to it. A check that cannot run here should say "does not apply" rather than sitting as
+     * never run forever, and certainly rather than failing: a tester who clicks GoblinBreach on 0.6.7 gets a
+     * command that throws, which is correct behaviour recorded as a fault.
+     */
+    private void skipWhatThisServerCannotDo() {
+        record("title.goblinbreach", "GoblinBreach");
+        record("title.voideviction", "VoidEviction");
+    }
+
+    private void record(String checkId, String style) {
+        if (Checks.byId(checkId) == null) return;
+        if (com.chromecide.lowtalk.hytale.compat.EventTitles.knows(style)) return;
+        RunRecord.Check state = record.check(checkId);
+        if (state.verdict == RunRecord.Verdict.SKIP) return;
+        record.decide(checkId, RunRecord.Verdict.SKIP,
+                "this server has no " + style + " title style (it offers "
+                        + String.join(", ", com.chromecide.lowtalk.hytale.compat.EventTitles.styleNames()) + ")");
+        record.flush();
+        getLogger().at(Level.INFO).log("[harness] %s skipped: no %s style on this server", checkId, style);
+    }
+
+    /**
      * Two functions the tester's own dialogue uses to hide what has already been done.
      *
      * <p>The record is the harness's, not LowTalk's, so the dialogue cannot see it without being told. Rather
@@ -123,6 +150,14 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
                 "True when that harness check has been run on this server version.",
                 (ctx, args) -> args.isEmpty() ? Boolean.FALSE
                         : Boolean.valueOf(record.check(String.valueOf(args.get(0))).seen));
+        // What this server can actually do. The tree guards the two pre-release title styles on it, so a
+        // release-line walk is never asked to judge an effect the server has no name for -- which is what
+        // produced the one FAIL sitting in the 0.6.7 record: a tester clicked GoblinBreach on a server whose
+        // enum has two entries, and the command threw, exactly as it should have.
+        api.registerFunction("has_title_style", "has_title_style(\"GoblinBreach\")",
+                "True when this server's own title-style enum has that style.",
+                (ctx, args) -> args.isEmpty() ? Boolean.FALSE
+                        : Boolean.valueOf(com.chromecide.lowtalk.hytale.compat.EventTitles.knows(String.valueOf(args.get(0)))));
         api.registerFunction("remaining", "remaining(\"title\")",
                 "How many harness checks whose id starts with that prefix have not been run yet.",
                 (ctx, args) -> {
