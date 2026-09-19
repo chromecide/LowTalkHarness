@@ -229,8 +229,11 @@ public final class Checks {
                 "The box accepts typing, Enter and OK behave the same, and the text comes back echoed exactly, "
                         + "capitals and spaces included. An empty submit takes the empty branch.",
                 "lowtalk:input");
-        tree("input.plural", "check_input_plural", "plural() agrees with a typed number",
-                "1 reads \"apple\" and anything else \"apples\", using the number the player typed.",
+        tree("input.plural", "check_input_plural", "A number box refuses a word, and plural() agrees with it",
+                "Typing a word brings the box back asking for a number, and nothing is stored until one is "
+                        + "given; then 1 reads \"apple\" and anything else \"apples\". Try a word first: this "
+                        + "check was a text box until a tester typed letters into it and the conversation "
+                        + "died two lines later.",
                 "lowtalk:plural", "lowtalk:input");
 
         tree("random.chance", "check_random_chance", "chance() splits roughly evenly",

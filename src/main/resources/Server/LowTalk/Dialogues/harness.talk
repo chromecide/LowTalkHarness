@@ -360,7 +360,7 @@ This one was visible but greyed out before the reveal, and refused the click.
 A text box takes what you type; Enter and OK should behave the same.
 -> Type a word <<if not checked("input.word")>>
     <<jump check_input_word>>
--> Type a number, and read plural() <<if not checked("input.plural")>>
+-> Type a number, and read plural() -- try a word first <<if not checked("input.plural")>>
     <<jump check_input_plural>>
 -> Back
     <<jump start_more>>
@@ -375,7 +375,7 @@ A text box takes what you type; Enter and OK should behave the same.
 <<jump area_input>>
 
 == check_input_plural
-<<input $tmp.n "Type a number">>
+<<input $tmp.n "Type a number" number>>
 {$tmp.n} {plural($tmp.n, "apple", "apples")}. Expect the word to agree with the number, and 1 to read "apple".
 <<jump area_input>>
 
