@@ -209,7 +209,8 @@ It is hour {hour()} and the weather is {weather()}.
     <<jump start>>
 
 == check_world_weather
-<<weather Zone1_Cloudy_Medium player>>
+<<weather Zone1_Rain player>>
+Rain, for you only. The server now believes your weather is {weather()}; expect drops falling, not just grey.
 <<wait 2>>
 <<jump area_world>>
 

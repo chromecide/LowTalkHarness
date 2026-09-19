@@ -107,6 +107,9 @@ public final class RunRecord {
         @Nullable public String node;
         /** The checks this was taken to be about, which are also marked FAIL. Empty when it was free-floating. */
         public List<String> checks = new ArrayList<>();
+        /** What was done about it, once something was. Null while it is still outstanding. */
+        @Nullable public String resolution;
+        @Nullable public String resolvedAt;
 
         Document toDocument() {
             Document d = new Document();
@@ -116,6 +119,8 @@ public final class RunRecord {
             if (dialogue != null) d.put("dialogue", dialogue);
             if (node != null) d.put("node", node);
             if (!checks.isEmpty()) d.put("checks", new ArrayList<>(checks));
+            if (resolution != null) d.put("resolution", resolution);
+            if (resolvedAt != null) d.put("resolvedAt", resolvedAt);
             return d;
         }
 
@@ -127,6 +132,8 @@ public final class RunRecord {
             f.player = d.getString("player");
             f.dialogue = d.getString("dialogue");
             f.node = d.getString("node");
+            f.resolution = d.getString("resolution");
+            f.resolvedAt = d.getString("resolvedAt");
             Object cs = d.get("checks");
             if (cs instanceof List<?> list) {
                 for (Object o : list) f.checks.add(String.valueOf(o));
@@ -134,9 +141,14 @@ public final class RunRecord {
             return f;
         }
 
+        public boolean outstanding() {
+            return resolution == null;
+        }
+
         /** One line for chat: the words first, because that is what anyone reading this wants. */
         public String line() {
             StringBuilder b = new StringBuilder(text);
+            if (resolution != null) b.append("  -> ").append(resolution);
             if (!checks.isEmpty()) b.append("  [").append(String.join(", ", checks)).append("]");
             else if (node != null) b.append("  [at ").append(dialogue).append("/").append(node).append("]");
             return b.toString();
@@ -271,6 +283,30 @@ public final class RunRecord {
     /** Everything anyone said was wrong on this version, oldest first. */
     public synchronized List<Feedback> feedback() {
         return new ArrayList<>(feedback);
+    }
+
+    /**
+     * Say what was done about a piece of feedback, and stop it counting as outstanding.
+     *
+     * <p>Kept rather than deleted. What someone reported and what came of it is the most interesting thing in
+     * the file — "rain was not working" and "the check asked for a cloudy sky" is a better record of an
+     * evening than either half alone, and a release gate that counts outstanding reports needs a way to close
+     * one honestly rather than by forgetting it.
+     */
+    public synchronized boolean resolve(int index, @Nonnull String resolution) {
+        if (index < 0 || index >= feedback.size()) return false;
+        Feedback f = feedback.get(index);
+        f.resolution = resolution.trim();
+        f.resolvedAt = Instant.now().toString();
+        dirty = true;
+        return true;
+    }
+
+    /** Everything reported and not yet answered. */
+    public synchronized List<Feedback> outstandingFeedback() {
+        List<Feedback> out = new ArrayList<>();
+        for (Feedback f : feedback) if (f.outstanding()) out.add(f);
+        return out;
     }
 
     /** Drop one feedback entry by its position in {@link #feedback()}, and unfail what it failed. */

@@ -156,7 +156,11 @@ public final class Checks {
                 "The buff icon disappears and health stops climbing.", "lowtalk:cure");
 
         tree("world.weather", "check_world_weather", "<<weather>> changes the sky for one player",
-                "The sky turns overcast for you and nobody else.", "lowtalk:weather", "Weather");
+                "Rain falls, for you and nobody else, and the line reports the weather the server now thinks "
+                        + "you have. Rain, not cloud: this check asked for Zone1_Cloudy_Medium, which is "
+                        + "tagged Cloudy and contains no rain, while the option offered to make it rain. The "
+                        + "tester reported rain was not working and was right about what they saw.",
+                "lowtalk:weather", "Weather");
         tree("world.weather.clear", "check_world_weather_clear", "<<weather clear>> gives the sky back",
                 "The natural sky returns.", "lowtalk:weather", "Weather");
         tree("world.time", "check_world_time", "<<time>> moves the clock",

@@ -45,6 +45,7 @@ public class HarnessCommand extends AbstractCommandCollection {
         this.addSubCommand(new FeedbackCommand(plugin));
         this.addSubCommand(new Undo(plugin));
         this.addSubCommand(new Report(plugin));
+        this.addSubCommand(new Resolve(plugin));
         this.addSubCommand(new Names());
     }
 
@@ -390,6 +391,41 @@ public class HarnessCommand extends AbstractCommandCollection {
         }
     }
 
+    /**
+     * {@code /harness resolve <n> <what was done>} — close a report without forgetting it.
+     *
+     * <p>What was reported and what came of it belong together. "rain was not working" and "the check asked
+     * for a cloudy sky, which has no rain in it" is a better record of an evening than either half, and the
+     * release gate counts outstanding reports, so there has to be a way to answer one rather than delete it.
+     */
+    static class Resolve extends CommandBase {
+        private final HarnessPlugin plugin;
+        private final RequiredArg<Integer> numberArg =
+                withRequiredArg("number", "Which report, as /harness report numbers them", ArgTypes.INTEGER);
+        private final RequiredArg<String> whatArg =
+                withRequiredArg("what", "What was done about it", ArgTypes.GREEDY_STRING);
+
+        Resolve(HarnessPlugin plugin) {
+            super("resolve", "Say what was done about a report, so it stops being outstanding");
+            this.plugin = plugin;
+            this.requirePermission(PERMISSION);
+        }
+
+        @Override
+        protected void executeSync(@Nonnull CommandContext context) {
+            RunRecord record = plugin.record();
+            int n = numberArg.get(context);
+            if (!record.resolve(n - 1, whatArg.get(context))) {
+                context.sendMessage(Message.raw("There is no report " + n + ". /harness report lists them."));
+                return;
+            }
+            record.flush();
+            plugin.refreshHuds();
+            context.sendMessage(Message.raw("Report " + n + " answered. "
+                    + record.outstandingFeedback().size() + " still outstanding."));
+        }
+    }
+
     /** Take the last piece of feedback back, for the one typed into the wrong window or about the wrong thing. */
     static class Undo extends CommandBase {
         private final HarnessPlugin plugin;
@@ -463,8 +499,11 @@ public class HarnessCommand extends AbstractCommandCollection {
             if (notes.isEmpty()) {
                 out.accept("  Nothing reported.");
             } else {
-                out.accept("  Reported (" + notes.size() + "):");
-                for (int i = 0; i < notes.size(); i++) out.accept("   " + (i + 1) + ". " + notes.get(i).line());
+                long open = notes.stream().filter(RunRecord.Feedback::outstanding).count();
+                out.accept("  Reported (" + notes.size() + ", " + open + " outstanding):");
+                for (int i = 0; i < notes.size(); i++) {
+                    out.accept("   " + (notes.get(i).outstanding() ? "* " : "  ") + (i + 1) + ". " + notes.get(i).line());
+                }
             }
             out.accept("  Full record: " + record.file());
         }
