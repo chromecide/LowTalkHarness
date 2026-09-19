@@ -44,8 +44,18 @@ public final class HarnessNpc {
      * them instead of talking. Its own dialogue is what turns it hostile, briefly, and puts it back.
      */
     public static final String FIGHTER_TAG = "harness_fighter";
-    public static final String FIGHTER_ROLE = "Goblin_Scavenger";
     public static final String FIGHTER_NAME = "LowTalk harness (fighter)";
+
+    /**
+     * Roles that will fight, tried in order until one spawns.
+     *
+     * <p>It was a single hard-coded {@code Goblin_Scavenger}, which exists on the release line and not on
+     * 0.7.0-pre.3.1, so the check simply did not start there and said so only in the tester's chat. A list
+     * survives a role being renamed between versions; every one of these is a concrete role that fights on
+     * both lines as of 0.6.8 and 0.7.0-pre.3.1.
+     */
+    private static final java.util.List<String> FIGHTER_ROLES = java.util.List.of(
+            "Goblin_Scrapper", "Goblin_Thief", "Trork_Sentry", "Outlander_Hunter", "Scarak_Defender");
 
     private HarnessNpc() {}
 
@@ -68,7 +78,12 @@ public final class HarnessNpc {
      */
     public static boolean spawnFighter(@Nonnull Store<EntityStore> store, @Nonnull Vector3d at,
                                        @Nonnull Ref<EntityStore> player, @Nonnull Consumer<String> out) {
-        return spawn(store, at, FIGHTER_ROLE, FIGHTER_NAME, FIGHTER_TAG, player, out);
+        for (String role : FIGHTER_ROLES) {
+            if (spawn(store, at, role, FIGHTER_NAME, FIGHTER_TAG, player, out)) return true;
+        }
+        out.accept("None of these roles would spawn: " + String.join(", ", FIGHTER_ROLES)
+                + ". They may have been renamed on this server version.");
+        return false;
     }
 
     private static boolean spawn(@Nonnull Store<EntityStore> store, @Nonnull Vector3d at, @Nonnull String role,
@@ -85,7 +100,11 @@ public final class HarnessNpc {
         Rotation3f facing = new Rotation3f(0.0f, Rotation3f.lookAt(pos, new Vector3d(at.x, at.y, at.z - 2.0)).yaw(), 0.0f);
         var pair = npcs.spawnNPC(store, role, null, pos, facing);
         if (pair == null) {
-            out.accept("Could not spawn " + role + ". Is LowTalk's asset pack loaded?");
+            // Quiet: spawnFighter works down a list and only the last word matters to the tester.
+            HarnessPlugin plugin = HarnessPlugin.get();
+            if (plugin != null) {
+                plugin.getLogger().at(java.util.logging.Level.INFO).log("[harness] role %s would not spawn", role);
+            }
             return false;
         }
         Ref<EntityStore> ref = pair.first();
@@ -104,7 +123,14 @@ public final class HarnessNpc {
             return false;
         }
         LowTalkApi.get().tagNpc(uuid.getUuid(), tag);
-        out.accept(name + " spawned and tagged '" + tag + "'. Talk to it to run the checks.");
+        out.accept(name + " spawned as " + role + ", tagged '" + tag + "'. Talk to it to run the checks.");
+        HarnessPlugin plugin = HarnessPlugin.get();
+        if (plugin != null) {
+            // In the log as well as the chat: a spawn that quietly did not happen is how the fighter check
+            // failed on the pre-release line with nothing written down anywhere.
+            plugin.getLogger().at(java.util.logging.Level.INFO).log("[harness] spawned %s as %s tagged @%s",
+                    name, role, tag);
+        }
         return true;
     }
 }

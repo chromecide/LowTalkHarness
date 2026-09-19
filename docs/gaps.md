@@ -69,6 +69,14 @@ about the obvious approach rather than about the question.
 
 ## Blind spots the server can move under us
 
+`whatChanged` compares the classes in two server jars. It says nothing about **assets**, and assets move
+too: `Goblin_Scavenger` exists on 0.6.8 and not on 0.7.0-pre.3.1, which is why the fighter check spawned
+nothing on the pre-release line and said so only in the tester's chat. A check that names a role, a particle,
+a recipe or a weather is resting on an asset id, and nothing compares those between versions.
+
+The harness now tries a list of roles rather than one, which survives a rename; the general problem is open.
+
+
 `./gradlew whatChanged <old> <new>` compares two archived server jars and, as well as naming the checks worth
 re-running, lists classes that **changed, are used by LowTalk, and are named by no check**. Those are the
 places a Hytale update can break something with nothing watching.
