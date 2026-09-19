@@ -283,10 +283,12 @@ public final class Checks {
                 "The barter shop opens and the conversation resumes on Back. Needs a merchant role, which the "
                         + "tester does not have.",
                 "lowtalk:shop", "lowtalk:teleport");
-        corridor("station.npc.spawn", 12, "test_npc/start", "Spawning and despawning an NPC",
-                "A new NPC appears beside you and despawning closes the window and removes it. Despawning the "
-                        + "harness tester would end the session it is being run from.",
-                "lowtalk:spawn", "lowtalk:despawn");
+        corridor("station.npc.spawn", 12, "test_npc/start", "Spawning an NPC that can be talked to",
+                "A helper appears beside you, has a dialogue of its own -- test_spawned.talk, bound to the "
+                        + "@spawned_helper tag the spawn gives it, which no other merchant has -- and "
+                        + "despawns itself when sent away. Station 12 used to despawn itself instead, which "
+                        + "retired a station mid-walk and took its renamed nameplate with it.",
+                "lowtalk:spawn", "lowtalk:despawn", "VariableStore");
         corridor("station.talker", 14, "test_talker/start", "A dialogue opened by the NPC's own role",
                 "The NPC opens it through its role's LowTalkOpenDialogue action, with LowTalk's use hook not "
                         + "involved. Needs a role wired that way, and Adventure mode.",
