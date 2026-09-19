@@ -158,4 +158,16 @@ class RunRecordTest {
         assertTrue(written.contains("retired"), "but it is still in the file");
         assertTrue(written.contains("station.feedback"));
     }
+
+    /**
+     * The rule that decides whether a pass may be typed by hand. A check the harness watches must have been
+     * watched happening; a check nothing watches can only ever be judged by hand, so the same rule would leave
+     * it able to fail and never able to pass — which is most of what is left on any version.
+     */
+    @Test
+    void onlyWatchedChecksMustBeSeenBeforeTheyCanPass() {
+        assertTrue(Checks.isWatched("title.major"), "a tree check is watched, so a pass has to be earned");
+        assertFalse(Checks.isWatched("editor.rows.render"), "the editor has nothing watching it and never will");
+        assertFalse(Checks.isWatched("no.such.check"), "and an id that names nothing is not watched either");
+    }
 }

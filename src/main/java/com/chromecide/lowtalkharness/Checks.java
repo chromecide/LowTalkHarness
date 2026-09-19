@@ -334,6 +334,19 @@ public final class Checks {
         return List.copyOf(BY_ID.keySet());
     }
 
+    /**
+     * Whether anything would notice this check being run.
+     *
+     * <p>A watched check is marked as run by watching LowTalk's events, so its never having been marked means
+     * it was never run, and a pass recorded over that would be a claim about nothing. An unwatched one — the
+     * editor, block binding, anything done out in the world — can never be marked whatever happens, so the
+     * same rule applied to it would make the hand-walked half of the list able to fail and never able to pass.
+     */
+    public static boolean isWatched(@Nonnull String id) {
+        Check c = BY_ID.get(id);
+        return c != null && c.autoSeen() != null;
+    }
+
     /** The checks a LowTalk passage means have been exercised. */
     public static List<Check> forPassage(@Nonnull String dialogueId, @Nonnull String passage) {
         String key = dialogueId + "/" + passage;

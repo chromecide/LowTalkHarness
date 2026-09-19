@@ -269,9 +269,11 @@ public class HarnessCommand extends AbstractCommandCollection {
                 return;
             }
             RunRecord record = plugin.record();
-            if (!record.check(id).seen && verdict == RunRecord.Verdict.PASS) {
-                // passing something that never ran is how a record stops meaning anything, and it is the one
-                // thing silence cannot imply either: nothing happened, so nobody was there to say nothing
+            // Passing something that never ran is how a record stops meaning anything — but only where a run
+            // would have been noticed. A check with nothing to watch can never be marked seen, so refusing to
+            // pass it would leave the hand-walked ones (the editor, block binding, anything out in the world)
+            // able to fail and never able to pass, which is the opposite of what the rule is for.
+            if (!record.check(id).seen && verdict == RunRecord.Verdict.PASS && Checks.isWatched(id)) {
                 context.sendMessage(Message.raw("'" + id + "' has not been run on this server version yet. "
                         + "Run it first, or /harness skip " + id + " if it does not apply here."));
                 return;
