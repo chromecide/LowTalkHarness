@@ -1,0 +1,324 @@
+{
+  "serverVersion": "0.6.8",
+  "build": "0.4.0 (9bff6e0d)",
+  "updated": "2026-09-19T23:34:25.047703Z",
+  "checks": {
+    "title.goblinbreach": {
+      "seen": false,
+      "verdict": "SKIP",
+      "note": "this server has no GoblinBreach title style (it offers Default, Major)",
+      "decidedAt": "2026-09-19T09:46:04.455873Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "title.voideviction": {
+      "seen": false,
+      "verdict": "SKIP",
+      "note": "this server has no VoidEviction title style (it offers Default, Major)",
+      "decidedAt": "2026-09-19T09:46:04.457715Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "attitude.behaviour": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:25:16.923620Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "station.travel": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:21:54.616877Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "station.npc.spawn": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:22:21.080430Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "station.talker": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:22:40.818593Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "editor.add.every.command": {
+      "seen": false,
+      "verdict": "PASS",
+      "note": "searched the Add menu by what commands do and checked the rows matched, on 9bff6e0d",
+      "decidedAt": "2026-09-19T23:30:54.966919Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "editor.rows.render": {
+      "seen": false,
+      "verdict": "PASS",
+      "note": "rendering checked by hand on 9bff6e0d, including the new text/number dropdown on the input row",
+      "decidedAt": "2026-09-19T23:29:16.571290Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "block.bind.door": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:21:20.890982Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "block.bind.single": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:21:23.404464Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "notify.toast": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:17:04.718597Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "notify.warning": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:17:08.710088Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "title.default": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:17:14.972898Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "title.minor.alias": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:17:18.826207Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "title.major": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:17:22.783728Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "items.give": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:17:30.518337Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "items.take": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:17:33.568577Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "items.count": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:17:35.061288Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "body.heal": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:17:47.109201Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "body.stat": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:17:41.753835Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "body.effect": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:17:43.176586Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "body.cure": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:17:46.433778Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "world.weather": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:17:50.667282Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "world.weather.clear": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:17:54.156301Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "world.time": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:17:58.560803Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "world.translate": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:18:00.895550Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "media.music": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:18:08.074097Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "media.music.clear": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:18:13.554047Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "media.vfx": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:18:16.401401Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "media.camera": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:18:20.417180Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "npc.anim": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:18:26.629154Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "npc.sound": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:18:34.211607Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "npc.rename.restore": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:18:36.581450Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "npc.attitude": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:18:37.710721Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "basics.continue": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:18:44.631844Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "basics.hidden": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:18:49.645779Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "basics.disabled": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:18:51.784533Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "basics.reveal": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:18:47.611841Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "input.word": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:18:56.967641Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "input.plural": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:19:03.004091Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "random.chance": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:19:13.940421Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "random.number": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:19:16.148217Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "random.ordinal": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:19:17.635068Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "format.variation": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:19:21.266738Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "format.once": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:19:23.606628Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "format.wait": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:19:26.302278Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "format.include": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:19:29.831159Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "progress.reputation.up": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:19:33.700829Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "progress.reputation.down": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:19:35.459322Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "progress.objective": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:19:36.811873Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "memory.npc": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:20:03.728277Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "memory.player": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:20:05.484788Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "memory.visited": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:20:06.970448Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "memory.marker": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:20:08.533012Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "memory.reset": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:20:09.880360Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "learn.recipe": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:19:54.109758Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "perm.check": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:19:51.024288Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "player.npc.names": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:19:48.234068Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "npc.rename": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:30:33.897181Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "block.bind.survives.restart": {
+      "seen": false,
+      "verdict": "PASS",
+      "note": "door and brazier both opened test_npc after the bounce, logged as BLOCK opens (23:33:40-50)",
+      "decidedAt": "2026-09-19T23:34:25.044309Z",
+      "build": "0.4.0 (9bff6e0d)"
+    },
+    "npc.rename.survives.restart": {
+      "seen": false,
+      "verdict": "PASS",
+      "note": "tester read Renamed Tester in nameplate, persisted and live after the bounce (23:33:36)",
+      "decidedAt": "2026-09-19T23:34:25.047671Z",
+      "build": "0.4.0 (9bff6e0d)"
+    }
+  }
+}
