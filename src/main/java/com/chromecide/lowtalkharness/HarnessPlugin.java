@@ -198,6 +198,21 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
         api.registerCommand("perm_clear", "<<perm_clear lowtalkharness.perm.probe>>",
                 "Harness only: remove both the grant and the deny, leaving the player as they were.",
                 (ctx, args) -> permClear(ctx, args));
+        // Whether an NPC could even notice this player. A creative-mode player is invisible to NPCs unless
+        // allowNPCDetection is set, so the fighter check cannot be observed at all in creative -- and would
+        // otherwise record a pass for a goblin standing politely still. The advice to "switch to creative
+        // first if you would rather not be hit" made the check untestable, twice, before anyone noticed.
+        api.registerFunction("player_detectable", "player_detectable()",
+                "Harness only: true when NPCs can see this player at all (false in creative).",
+                (ctx, args) -> {
+                    Ref<EntityStore> ref = ctx.getPlayer().getReference();
+                    var store = ctx.getEntityStore();
+                    if (ref == null || store == null || !ref.isValid()) return Boolean.FALSE;
+                    boolean seen = com.hypixel.hytale.server.npc.util.EntityDetectionUtil
+                            .isDetectableByNPCs(ref, store);
+                    getLogger().at(Level.INFO).log("[harness] player_detectable() = %s", seen);
+                    return seen;
+                });
         api.registerFunction("npc_states", "npc_states()",
                 "Harness only: the states this dialogue's NPC role defines, comma separated.",
                 (ctx, args) -> String.join(", ", stateNames(ctx)));

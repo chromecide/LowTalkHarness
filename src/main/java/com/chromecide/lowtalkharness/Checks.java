@@ -200,13 +200,15 @@ public final class Checks {
                 List.of("Run /harness fighter to put a goblin in front of you.",
                         "Talk to it and let it turn on you."),
                 "It comes at you once hostile -- and only once the dialogue closes, because it does nothing "
-                        + "while the window is open. It will NOT stop when set friendly again: an attitude "
-                        + "decides who an NPC starts on, not a fight in progress, so send it away instead. "
+                        + "while the window is open. Making it friendly again does not stop it on its own -- "
+                        + "an attitude decides who an NPC starts on, not a fight in progress -- so the calm "
+                        + "option does that and then <<calm>>, which clears the target. "
                         + "The tester itself "
                         + "cannot answer this: its role is built on Template_Temple, which has attitude "
                         + "sensors for Neutral and Friendly and no hostile branch, no attack and no combat, "
                         + "so setting it hostile changes a value nothing in the role reads.",
-                List.of("lowtalk:attitude", "AttitudeGroup", "WorldSupport"), null,
+                List.of("lowtalk:attitude", "lowtalk:calm", "AttitudeGroup", "WorldSupport",
+                        "MarkedEntitySupport"), null,
                 "harness_fighter/check_attitude_behaviour_ok", "harness_fighter/check_attitude_behaviour_bad"));
 
         tree("basics.continue", "check_basics_continue", "Two lines in a row give a Continue",

@@ -11,9 +11,10 @@
 #   2. So it cannot put itself back at the end of the same passage. <<wait>> was tried and is worse than
 #      useless here: going hostile means attacking, being attacked closes the window, and everything after
 #      the wait is abandoned with it. Calming down is an option the tester picks, when they have seen enough.
-#   3. And calming down does not stop it. An attitude decides who an NPC starts on, not a fight already
-#      under way; <<attitude friendly>> ran twice on it mid-swing and it kept swinging. Despawning is the
-#      way out, which is why "send me away" is offered everywhere and is the last word on this page.
+#   3. And an attitude alone does not stop it. An attitude decides who an NPC starts on, not a fight already
+#      under way; <<attitude friendly>> ran twice on it mid-swing and it kept swinging. That is what
+#      <<calm>> was added to LowTalk for -- it clears the targets the role has marked -- and this file is
+#      what tests it. Despawning is still offered as the way out if it does not work.
 
 npc: @harness_fighter
 title: LowTalk harness (fighter)
@@ -31,6 +32,9 @@ I can actually fight, which the tester cannot. My attitude to you is {attitude()
     <<end>>
 
 == check_attitude_behaviour
+<<if not player_detectable()>>
+    <<jump cannot_see_you>>
+<<endif>>
 <<attitude hostile>>
 <<if attitude() == "hostile">>
     <<jump check_attitude_behaviour_ok>>
@@ -39,7 +43,7 @@ I can actually fight, which the tester cannot. My attitude to you is {attitude()
 <<endif>>
 
 == check_attitude_behaviour_ok
-Hostile, though you would not know it from in here: I do nothing while we are talking. Close this window and watch. Then talk to me again and pick Calm down. Switch to creative first if you would rather not be hit.
+Hostile, though you would not know it from in here: I do nothing while we are talking. Close this window and watch. Then talk to me again and make me friendly. You will take a few hits; I will patch you up afterwards.
 -> Leave me to it
     <<end>>
 -> On second thoughts, make me friendly again
@@ -52,12 +56,20 @@ Wrong, or the assertion is. attitude() reads {attitude()} rather than hostile.
 
 == calm
 <<attitude friendly>>
-My attitude reads {attitude()} again -- but if I am already swinging at you, that will not stop me. An attitude decides who I start on, not a fight I am in, and the game gives nobody a way to call one off. Send me away.
--> Send me away
-    <<jump leave>>
--> Leave me be
+<<calm>>
+My attitude reads {attitude()} and I have forgotten what I was fighting. The attitude alone would not have done it: that decides who I start on, not a fight I am already in. If I am still swinging, say so with /harness feedback and send me away.
+-> Good
     <<end>>
+-> Send me away anyway
+    <<jump leave>>
+
+== cannot_see_you
+I cannot see you at all -- you are in creative, and NPCs do not notice creative players unless the world says otherwise. Nothing I do now would prove anything, so I have not recorded this check. Switch to adventure or survival and ask me again.
+-> Back
+    <<jump start>>
 
 == leave
 Right you are.
+<<calm>>
+<<heal>>
 <<despawn>>
