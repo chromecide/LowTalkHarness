@@ -45,6 +45,7 @@ public class HarnessCommand extends AbstractCommandCollection {
         this.addSubCommand(new FeedbackCommand(plugin));
         this.addSubCommand(new Undo(plugin));
         this.addSubCommand(new Report(plugin));
+        this.addSubCommand(new Names());
     }
 
     /**
@@ -436,6 +437,51 @@ public class HarnessCommand extends AbstractCommandCollection {
                 for (int i = 0; i < notes.size(); i++) out.accept("   " + (i + 1) + ". " + notes.get(i).line());
             }
             out.accept("  Full record: " + record.file());
+        }
+    }
+
+    /**
+     * {@code /harness names} — what the NPCs around you are called, in all three places a name is kept.
+     *
+     * <p>For the one question a person standing in front of an NPC cannot answer: after a restart put its old
+     * name back, was the new name never saved, or saved and not re-applied? Run it before a bounce and after
+     * one and the difference says which, and therefore whether the fix belongs in LowTalk or in a workaround
+     * for the game's load path.
+     */
+    static class Names extends com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand {
+        private final OptionalArg<Integer> radiusArg =
+                withOptionalArg("radius", "How far to look, in blocks (default 8)", ArgTypes.INTEGER);
+
+        Names() {
+            super("names", "What the NPCs near you are called: nameplate, persisted and live");
+            this.requirePermission(PERMISSION);
+        }
+
+        @Override
+        protected void execute(@Nonnull CommandContext context,
+                               @Nonnull com.hypixel.hytale.component.Store<com.hypixel.hytale.server.core.universe.world.storage.EntityStore> store,
+                               @Nonnull com.hypixel.hytale.component.Ref<com.hypixel.hytale.server.core.universe.world.storage.EntityStore> entity,
+                               @Nonnull com.hypixel.hytale.server.core.universe.PlayerRef player,
+                               @Nonnull com.hypixel.hytale.server.core.universe.world.World world) {
+            Consumer<String> out = line -> context.sendMessage(Message.raw(line));
+            var transform = store.getComponent(entity,
+                    com.hypixel.hytale.server.core.modules.entity.component.TransformComponent.getComponentType());
+            if (transform == null) {
+                out.accept("Could not work out where you are standing.");
+                return;
+            }
+            double radius = radiusArg.provided(context) ? radiusArg.get(context) : 8;
+            var found = NameProbe.near(store, transform.getPosition(), radius);
+            if (found.isEmpty()) {
+                out.accept("No NPCs within " + (int) radius + " blocks.");
+                return;
+            }
+            out.accept(found.size() + " NPC(s) within " + (int) radius + " blocks:");
+            // the log as well as the chat: this is evidence, and chat scrolls away
+            for (NameProbe.Found f : found) {
+                out.accept("  " + f.line());
+                HarnessPlugin.get().getLogger().at(java.util.logging.Level.INFO).log("[harness] name: %s", f.line());
+            }
         }
     }
 }
