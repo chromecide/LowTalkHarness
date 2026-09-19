@@ -17,8 +17,8 @@ import java.util.List;
  * and sit over whatever else is on screen, which is the only way to watch progress while walking the corridor.
  *
  * <p>It shows nothing you could click. {@code CustomHud} carries drawing commands and no event bindings, and
- * there is no inbound HUD packet, so verdicts are typed with {@code /harness}. What this is for is the question
- * you have while standing in front of a station: what here has not been tried yet.
+ * there is no inbound HUD packet, so a complaint is typed with {@code /harness feedback}. What this is for is
+ * the question you have while standing in front of a station: what here has not been tried yet.
  *
  * <p>Contextual on purpose. The first version of {@code /harness todo} listed every outstanding check and filled
  * the chat window; the need is almost never the whole list, it is the station in front of you.
@@ -63,29 +63,36 @@ public final class HarnessHud extends CustomUIHud {
         RunRecord record = plugin.record();
         List<Checks.Check> here = scope();
         int[] t = record.tally(here.stream().map(Checks.Check::id).toList());
-        int outstanding = here.size() - t[1];
+        int toRun = here.size() - t[1];
 
         StringBuilder rows = new StringBuilder();
         rows.append(label(title(here), 13, "#8fd0ff", true));
-        rows.append(label(t[1] + "/" + here.size() + " decided"
+        rows.append(label((toRun == 0 ? "all " + here.size() + " run" : toRun + " of " + here.size() + " to run")
                 + (t[3] > 0 ? "   " + t[3] + " failed" : ""), 12, t[3] > 0 ? "#ff9d8a" : "#96a9be", false));
 
-        // The checks still to do here, a few at a time: a panel that scrolls off the screen helps nobody.
+        // What is left here, a few at a time: a panel that scrolls off the screen helps nobody. Anything that
+        // ran and drew no complaint is finished, so it is not on the list — the panel shows work, not history.
+        int outstanding = toRun + t[3];
         int shown = 0;
-        for (Checks.Check c : here) {
-            RunRecord.Check state = record.check(c.id());
-            if (state.verdict != null) continue;
-            if (shown == MAX_ROWS) {
-                rows.append(label("...and " + (outstanding - shown) + " more", 11, "#6f8296", false));
-                break;
+        boolean truncated = false;
+        for (int pass = 0; pass < 2 && !truncated; pass++) {
+            for (Checks.Check c : here) {
+                RunRecord.Check state = record.check(c.id());
+                boolean failed = state.verdict == RunRecord.Verdict.FAIL;
+                if (pass == 0 ? !failed : (failed || state.outcome() != null)) continue;
+                if (shown == MAX_ROWS) {
+                    rows.append(label("...and " + (outstanding - shown) + " more", 11, "#6f8296", false));
+                    truncated = true;
+                    break;
+                }
+                // ASCII only. The bullet drew fine but the white bullet came out as "?", which reads as
+                // something being wrong rather than as a check nobody has run yet.
+                rows.append(label((failed ? "! fail   " : "  run    ") + c.id(),
+                        11, failed ? "#ff9d8a" : "#96a9be", false));
+                shown++;
             }
-            // ASCII only. The bullet drew fine but the white bullet came out as "?", which reads as
-            // something being wrong rather than as a check nobody has run yet.
-            rows.append(label((state.seen ? "> judge  " : "  run    ") + c.id(),
-                    11, state.seen ? "#ffd479" : "#96a9be", false));
-            shown++;
         }
-        if (outstanding == 0) rows.append(label("all decided here", 11, "#9fd18a", false));
+        if (outstanding == 0) rows.append(label("all clear here", 11, "#9fd18a", false));
 
         return "Group {\n"
                 + "  Anchor: (Right: 16, Top: 80, Width: 230);\n"

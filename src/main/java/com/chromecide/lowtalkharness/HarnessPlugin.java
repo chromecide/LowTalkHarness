@@ -39,8 +39,17 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
     private RunRecord record;
     /** The panel each player has asked for, by player id. Off until asked: it is a tester's tool, not furniture. */
     private final Map<UUID, HarnessHud> huds = new ConcurrentHashMap<>();
-    /** Where each player is, so a command that fails can be blamed on the passage that ran it. */
-    private final Map<UUID, String> currentNode = new ConcurrentHashMap<>();
+    /** Where each player is, so a command that fails — or a complaint typed in chat — lands on the right check. */
+    private final Map<UUID, Where> whereabouts = new ConcurrentHashMap<>();
+
+    /**
+     * The last passage a player reached, kept after the conversation ends.
+     *
+     * <p>Not cleared on {@code onEnd}, because the complaint usually comes a moment after the page closes:
+     * you watch the title not appear, back out, and type. Losing the location at that exact moment would throw
+     * away the only context worth having.
+     */
+    public record Where(@Nonnull String dialogueId, @Nonnull String node) {}
 
     public HarnessPlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -55,6 +64,12 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
         return record;
     }
 
+    /** The last passage this player was in, or null if they have not talked to anything yet. */
+    @Nullable
+    public Where whereIs(@Nonnull UUID playerId) {
+        return whereabouts.get(playerId);
+    }
+
     @Override
     protected void setup() {
         String version = serverVersion();
@@ -62,17 +77,57 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
 
         LowTalkApi api = LowTalkApi.get();
         api.addListener(this);
+        registerFunctions(api);
         getCommandRegistry().registerCommand(new HarnessCommand(this));
 
         int[] t = record.tally(Checks.ids());
         getLogger().at(Level.INFO).log(
-                "LowTalk harness watching server %s: %d checks, %d seen, %d decided (%d pass, %d fail). Record: %s",
-                version, Checks.ids().size(), t[0], t[1], t[2], t[3], record.file());
+                "LowTalk harness watching server %s: %d checks, %d run, %d answered (%d pass, %d fail), "
+                        + "%d still to run, %d pieces of feedback. Record: %s",
+                version, Checks.ids().size(), t[0], t[1], t[2], t[3], Checks.ids().size() - t[1],
+                record.feedback().size(), record.file());
+        // A check that was removed from the list leaves its result behind in older records. Say so once, rather
+        // than letting a stale id sit in the file looking like something that still means anything.
+        List<String> retired = record.retiredIds();
+        if (!retired.isEmpty()) {
+            getLogger().at(Level.INFO).log("%d recorded checks no longer exist and are kept under 'retired': %s",
+                    retired.size(), String.join(", ", retired));
+        }
     }
 
     @Override
     protected void shutdown() {
         if (record != null) record.flush();
+    }
+
+    /**
+     * Two functions the tester's own dialogue uses to hide what has already been done.
+     *
+     * <p>The record is the harness's, not LowTalk's, so the dialogue cannot see it without being told. Rather
+     * than keeping a second copy of "what has been run" in dialogue variables — which would drift, and would be
+     * per player rather than per server version — the record is exposed as functions and the options guard on
+     * them. What the tree shows is then exactly what the record says is left.
+     *
+     * <p>Registering them is also the API's third extension point getting a consumer: commands and listeners
+     * had one, functions had none.
+     */
+    private void registerFunctions(LowTalkApi api) {
+        api.registerFunction("checked", "checked(\"title.major\")",
+                "True when that harness check has been run on this server version.",
+                (ctx, args) -> args.isEmpty() ? Boolean.FALSE
+                        : Boolean.valueOf(record.check(String.valueOf(args.get(0))).seen));
+        api.registerFunction("remaining", "remaining(\"title\")",
+                "How many harness checks whose id starts with that prefix have not been run yet.",
+                (ctx, args) -> {
+                    String prefix = args.isEmpty() ? "" : String.valueOf(args.get(0));
+                    int left = 0;
+                    for (Checks.Check c : Checks.all()) {
+                        if (c.autoSeen() == null) continue;      // nothing watches it, so it can never tick off
+                        if (!c.id().startsWith(prefix)) continue;
+                        if (!record.check(c.id()).seen) left++;
+                    }
+                    return (double) left;
+                });
     }
 
     // ---- the panel
@@ -137,7 +192,7 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
      */
     @Override
     public void onNode(@Nonnull DialogueContext ctx, @Nonnull String node) {
-        currentNode.put(ctx.getPlayer().getUuid(), node);
+        whereabouts.put(ctx.getPlayer().getUuid(), new Where(ctx.getDialogueId(), node));
         pointHudAt(ctx.getPlayer().getUuid(), ctx.getDialogueId());
         List<Checks.Check> hit = Checks.forPassage(ctx.getDialogueId(), node);
         if (hit.isEmpty()) {
@@ -188,7 +243,8 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
     public void onCommand(@Nonnull DialogueContext ctx, @Nonnull String command,
                           @Nonnull List<String> args, @Nullable String error) {
         if (error == null) return;
-        for (Checks.Check c : Checks.forPassage(ctx.getDialogueId(), currentNode.getOrDefault(ctx.getPlayer().getUuid(), ""))) {
+        Where where = whereabouts.get(ctx.getPlayer().getUuid());
+        for (Checks.Check c : Checks.forPassage(ctx.getDialogueId(), where == null ? "" : where.node())) {
             record.decide(c.id(), RunRecord.Verdict.FAIL, "<<" + command + ">> failed: " + error);
             getLogger().at(Level.WARNING).log("[harness] %s failed: <<%s>> %s", c.id(), command, error);
         }

@@ -16,12 +16,17 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 /**
- * {@code /harness} — what is left to test on this server version, and what happened when it was.
+ * {@code /harness} — what is left to test on this server version, and what went wrong when it was tested.
  *
- * <p>Verdicts are typed rather than clicked because a HUD cannot take input: {@code CustomHud} carries drawing
- * commands and no event bindings, and there is no inbound HUD event packet. So the corner of the screen can show
- * the score, but saying "that looked wrong" has to come from somewhere else, and a command is the least
- * ceremonious somewhere.
+ * <p>Typed rather than clicked because a HUD cannot take input: {@code CustomHud} carries drawing commands and
+ * no event bindings, and there is no inbound HUD event packet. So the corner of the screen can show the score,
+ * but saying "that looked wrong" has to come from somewhere else, and a command is the least ceremonious
+ * somewhere.
+ *
+ * <p>The load is deliberately one-sided. Running a check is free — walking the tester's tree records it — and
+ * a check that ran and drew no comment is a pass. The only thing anyone has to type is {@code /harness feedback}
+ * followed by what went wrong, in whatever words come to mind. That is the one keystroke in the whole harness
+ * that carries information, so it is the one the design spends its budget on.
  */
 public class HarnessCommand extends AbstractCommandCollection {
     public static final String PERMISSION = "lowtalkharness.use";
@@ -32,10 +37,14 @@ public class HarnessCommand extends AbstractCommandCollection {
         this.addSubCommand(new Todo(plugin));
         this.addSubCommand(new Hud(plugin));
         this.addSubCommand(new Npc());
+        this.addSubCommand(new Reset(plugin));
         this.addSubCommand(new Show(plugin));
         this.addSubCommand(new Pass(plugin));
         this.addSubCommand(new Fail(plugin));
         this.addSubCommand(new Skip(plugin));
+        this.addSubCommand(new FeedbackCommand(plugin));
+        this.addSubCommand(new Undo(plugin));
+        this.addSubCommand(new Report(plugin));
     }
 
     /**
@@ -45,6 +54,10 @@ public class HarnessCommand extends AbstractCommandCollection {
      * seventy-odd the corridor is worth it would be unreadable. Chat is a poor place for a list, so this answers
      * "how much is left, and where" and takes a filter — a station number, a kind, or an id prefix — for the
      * one slice you are actually standing in front of.
+     *
+     * <p>Outstanding now means one of two things: never run, or run and complained about. A check that ran
+     * quietly is finished, so it is not here. That change alone took the list on pre.3 from forty-odd lines to
+     * the twenty-one nobody has walked yet, which is the number that was always the point.
      */
     static class Todo extends CommandBase {
         private final HarnessPlugin plugin;
@@ -52,7 +65,7 @@ public class HarnessCommand extends AbstractCommandCollection {
                 withOptionalArg("only", "A station number, a kind such as RESTART, or the start of an id", ArgTypes.STRING);
 
         Todo(HarnessPlugin plugin) {
-            super("todo", "How much is left to test on this server version; add a station, kind or id to narrow it");
+            super("todo", "What is left to run on this server version; add a station, kind or id to narrow it");
             this.plugin = plugin;
             this.requirePermission(PERMISSION);
         }
@@ -73,42 +86,51 @@ public class HarnessCommand extends AbstractCommandCollection {
             boolean narrowed = filterArg.provided(context);
             String filter = narrowed ? filterArg.get(context) : "";
 
-            List<Checks.Check> ready = new ArrayList<>();
+            List<Checks.Check> failed = new ArrayList<>();
             List<Checks.Check> untouched = new ArrayList<>();
-            Map<String, int[]> byGroup = new LinkedHashMap<>();
+            Map<String, Integer> byGroup = new LinkedHashMap<>();
             for (Checks.Check c : Checks.all()) {
                 if (!matches(c, filter)) continue;
                 RunRecord.Check state = record.check(c.id());
-                if (state.verdict != null) continue;
-                (state.seen ? ready : untouched).add(c);
+                if (state.verdict == RunRecord.Verdict.FAIL) {
+                    failed.add(c);
+                    continue;
+                }
+                if (state.outcome() != null) continue;      // ran quietly, or skipped: nothing left to do
+                untouched.add(c);
                 String group = c.station() != null ? "station " + c.station() : c.kind().name().toLowerCase(java.util.Locale.ROOT);
-                int[] n = byGroup.computeIfAbsent(group, k -> new int[2]);
-                if (state.seen) n[0]++; else n[1]++;
+                byGroup.merge(group, 1, Integer::sum);
             }
 
             int[] t = record.tally(Checks.ids());
-            out.accept("Harness on " + record.serverVersion() + ": " + t[1] + "/" + Checks.ids().size()
-                    + " decided, " + t[2] + " pass, " + t[3] + " fail.");
-            if (ready.isEmpty() && untouched.isEmpty()) {
-                out.accept(narrowed ? "Nothing outstanding for '" + filter + "'." : "Everything is decided on this version.");
+            int left = Checks.ids().size() - t[1];
+            out.accept("Harness on " + record.serverVersion() + ": " + t[2] + " pass, " + t[3] + " fail, "
+                    + left + " of " + Checks.ids().size() + " not run.");
+            if (failed.isEmpty() && untouched.isEmpty()) {
+                out.accept(narrowed ? "Nothing outstanding for '" + filter + "'." : "Everything here has been run and nothing was reported.");
                 return;
+            }
+
+            for (Checks.Check c : failed) {
+                RunRecord.Check state = record.check(c.id());
+                out.accept("  FAIL  " + c.id() + (state.note == null ? "" : " - " + state.note));
             }
 
             if (narrowed) {
                 // asked about one slice, so name the checks in it
-                for (Checks.Check c : ready) out.accept("  judge: " + c.id() + " - " + c.title());
-                for (Checks.Check c : untouched) out.accept("  run:   " + c.id() + " - " + c.title());
+                for (Checks.Check c : untouched) out.accept("  run   " + c.id() + " - " + c.title());
                 return;
             }
 
-            out.accept("  " + ready.size() + " run but not judged, " + untouched.size() + " not yet run:");
-            for (Map.Entry<String, int[]> e : byGroup.entrySet()) {
-                out.accept("    " + e.getKey() + ": " + e.getValue()[0] + " to judge, " + e.getValue()[1] + " to run");
+            if (!untouched.isEmpty()) {
+                out.accept("  " + untouched.size() + " still to run:");
+                for (Map.Entry<String, Integer> e : byGroup.entrySet()) {
+                    out.accept("    " + e.getKey() + ": " + e.getValue());
+                }
+                out.accept("  narrow it: /harness todo <station|kind|id>");
             }
-            if (!ready.isEmpty()) {
-                out.accept("  next: /harness pass|fail " + ready.get(0).id());
-            }
-            out.accept("  narrow it: /harness todo <station|kind|id>");
+            int notes = record.feedback().size();
+            if (notes > 0) out.accept("  " + notes + " reported: /harness report");
         }
     }
 
@@ -180,13 +202,52 @@ public class HarnessCommand extends AbstractCommandCollection {
             for (int i = 0; i < c.steps().size(); i++) out.accept("  " + (i + 1) + ". " + c.steps().get(i));
             out.accept("  expect: " + c.expected());
             out.accept("  covers: " + String.join(", ", c.covers()));
-            out.accept("  here:   " + (state.seen ? "run" : "not run")
-                    + (state.verdict == null ? ", no verdict" : ", " + state.verdict)
-                    + (state.note == null ? "" : " - " + state.note));
+            RunRecord.Verdict outcome = state.outcome();
+            out.accept("  here:   " + (outcome == null ? "not run on " + plugin.record().serverVersion()
+                    : outcome + (state.impliedPass() ? " (ran, nothing reported)" : "")
+                            + (state.note == null ? "" : " - " + state.note)));
         }
     }
 
-    /** Shared by pass/fail/skip: the only difference is the verdict recorded. */
+    /**
+     * Forget a check, so the tester offers it again.
+     *
+     * <p>The tree hides an option once its check has run, which is what makes walking it possible — but it also
+     * means a check cannot be repeated to look at something twice. This puts one back.
+     */
+    static class Reset extends CommandBase {
+        private final HarnessPlugin plugin;
+        private final RequiredArg<String> idArg = withRequiredArg("check", "Check id", ArgTypes.STRING);
+
+        Reset(HarnessPlugin plugin) {
+            super("reset", "Forget a check on this version so it can be run again");
+            this.plugin = plugin;
+            this.requirePermission(PERMISSION);
+        }
+
+        @Override
+        protected void executeSync(@Nonnull CommandContext context) {
+            String id = idArg.get(context);
+            if (Checks.byId(id) == null) {
+                context.sendMessage(Message.raw("No check called '" + id + "'. /harness todo lists them."));
+                return;
+            }
+            boolean had = plugin.record().clear(id);
+            plugin.record().flush();
+            plugin.refreshHuds();
+            context.sendMessage(Message.raw(had
+                    ? id + " forgotten on " + plugin.record().serverVersion() + "; the tester will offer it again."
+                    : id + " had nothing recorded on this version."));
+        }
+    }
+
+    /**
+     * Shared by pass/fail/skip: the only difference is the verdict recorded.
+     *
+     * <p>These are the override, not the normal path. Running a check is what records a pass; {@code pass} here
+     * is for taking one back — clearing a failure after looking again, or after a complaint turned out to be
+     * about something else.
+     */
     abstract static class Decide extends CommandBase {
         private final HarnessPlugin plugin;
         private final RunRecord.Verdict verdict;
@@ -209,7 +270,8 @@ public class HarnessCommand extends AbstractCommandCollection {
             }
             RunRecord record = plugin.record();
             if (!record.check(id).seen && verdict == RunRecord.Verdict.PASS) {
-                // passing something that never ran is how a record stops meaning anything
+                // passing something that never ran is how a record stops meaning anything, and it is the one
+                // thing silence cannot imply either: nothing happened, so nobody was there to say nothing
                 context.sendMessage(Message.raw("'" + id + "' has not been run on this server version yet. "
                         + "Run it first, or /harness skip " + id + " if it does not apply here."));
                 return;
@@ -231,5 +293,147 @@ public class HarnessCommand extends AbstractCommandCollection {
 
     static class Skip extends Decide {
         Skip(HarnessPlugin p) { super("skip", "Record that a check does not apply on this version", p, RunRecord.Verdict.SKIP); }
+    }
+
+    /**
+     * {@code /harness feedback <what went wrong>} — the only thing a tester has to type.
+     *
+     * <p>Free text, no id, no syntax. The complaint is recorded against wherever the player last was, which is
+     * almost always what it is about: you watch the wrong title draw, close the page, and say so. That fails
+     * the check, because a pass is what silence means and this is not silence.
+     *
+     * <p>Starting the text with a check id aims it somewhere else — {@code /harness feedback title.goblin the
+     * banner never drew} — for when you have walked on before writing it down. Feedback that matches no check
+     * at all is kept anyway, unattached, and read out with the rest at the end: a complaint the harness cannot
+     * file is still a complaint, and losing it because it did not fit the model would be the whole mistake.
+     */
+    static class FeedbackCommand extends com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand {
+        private final HarnessPlugin plugin;
+        private final RequiredArg<String> textArg =
+                withRequiredArg("what", "What went wrong, in your own words", ArgTypes.GREEDY_STRING);
+
+        FeedbackCommand(HarnessPlugin plugin) {
+            super("feedback", "Say what went wrong; it fails the check you are on and is kept for the end");
+            this.plugin = plugin;
+            this.requirePermission(PERMISSION);
+        }
+
+        @Override
+        protected void execute(@Nonnull CommandContext context,
+                               @Nonnull com.hypixel.hytale.component.Store<com.hypixel.hytale.server.core.universe.world.storage.EntityStore> store,
+                               @Nonnull com.hypixel.hytale.component.Ref<com.hypixel.hytale.server.core.universe.world.storage.EntityStore> entity,
+                               @Nonnull com.hypixel.hytale.server.core.universe.PlayerRef player,
+                               @Nonnull com.hypixel.hytale.server.core.universe.world.World world) {
+            Consumer<String> out = line -> context.sendMessage(Message.raw(line));
+            String text = textArg.get(context).trim();
+            if (text.isEmpty()) {
+                out.accept("Say what went wrong: /harness feedback the goblin title never drew");
+                return;
+            }
+
+            // an id in front aims it by hand; otherwise it lands on wherever they last were
+            List<String> about = new ArrayList<>();
+            String dialogue = null, node = null;
+            int space = text.indexOf(' ');
+            String head = space < 0 ? text : text.substring(0, space);
+            Checks.Check named = Checks.byId(head);
+            if (named != null && space > 0) {
+                about.add(named.id());
+                text = text.substring(space + 1).trim();
+            } else {
+                HarnessPlugin.Where where = plugin.whereIs(player.getUuid());
+                if (where != null) {
+                    dialogue = where.dialogueId();
+                    node = where.node();
+                    for (Checks.Check c : Checks.forPassage(dialogue, node)) about.add(c.id());
+                }
+            }
+
+            RunRecord record = plugin.record();
+            RunRecord.Feedback f = record.addFeedback(text, player.getUuid().toString(), dialogue, node, about);
+            record.flush();
+            plugin.refreshHuds();
+
+            if (about.isEmpty()) {
+                out.accept("Noted, with nothing to pin it on: \"" + f.text + "\"");
+                out.accept("  It is kept for the end. /harness feedback <check id> <what happened> aims one at a check.");
+            } else {
+                out.accept("Noted against " + String.join(", ", about) + ": \"" + f.text + "\"");
+            }
+            out.accept("  " + record.feedback().size() + " so far. /harness report reads them back, /harness undo takes this one off.");
+        }
+    }
+
+    /** Take the last piece of feedback back, for the one typed into the wrong window or about the wrong thing. */
+    static class Undo extends CommandBase {
+        private final HarnessPlugin plugin;
+
+        Undo(HarnessPlugin plugin) {
+            super("undo", "Remove the most recent piece of feedback, and the failure it caused");
+            this.plugin = plugin;
+            this.requirePermission(PERMISSION);
+        }
+
+        @Override
+        protected void executeSync(@Nonnull CommandContext context) {
+            RunRecord record = plugin.record();
+            List<RunRecord.Feedback> all = record.feedback();
+            if (all.isEmpty()) {
+                context.sendMessage(Message.raw("Nothing has been reported on " + record.serverVersion() + " yet."));
+                return;
+            }
+            RunRecord.Feedback last = all.get(all.size() - 1);
+            record.dropFeedback(all.size() - 1);
+            record.flush();
+            plugin.refreshHuds();
+            context.sendMessage(Message.raw("Removed: \"" + last.text + "\""
+                    + (last.checks.isEmpty() ? "" : " (" + String.join(", ", last.checks) + " back to how they ran)")));
+        }
+    }
+
+    /**
+     * The end of a run, read out: what passed, what did not, and everything anyone said about it.
+     *
+     * <p>This is what the feedback is accumulated for. The record on disk is the durable version, but a run
+     * ends with someone standing in a test world wanting to know whether it went well, and that answer should
+     * not require leaving the game to read a JSON file.
+     */
+    static class Report extends CommandBase {
+        private final HarnessPlugin plugin;
+
+        Report(HarnessPlugin plugin) {
+            super("report", "Everything reported on this server version, with the pass and fail counts");
+            this.plugin = plugin;
+            this.requirePermission(PERMISSION);
+        }
+
+        @Override
+        protected void executeSync(@Nonnull CommandContext context) {
+            Consumer<String> out = line -> context.sendMessage(Message.raw(line));
+            RunRecord record = plugin.record();
+            List<String> ids = Checks.ids();
+            int[] t = record.tally(ids);
+            int skipped = 0;
+            for (String id : ids) if (record.check(id).verdict == RunRecord.Verdict.SKIP) skipped++;
+
+            out.accept("LowTalk harness, " + record.serverVersion() + ":");
+            out.accept("  " + t[2] + " pass, " + t[3] + " fail, " + skipped + " skipped, "
+                    + (ids.size() - t[1]) + " never run, of " + ids.size() + ".");
+
+            for (String id : ids) {
+                RunRecord.Check c = record.check(id);
+                if (c.verdict != RunRecord.Verdict.FAIL) continue;
+                out.accept("  FAIL  " + id + (c.note == null ? "" : " - " + c.note));
+            }
+
+            List<RunRecord.Feedback> notes = record.feedback();
+            if (notes.isEmpty()) {
+                out.accept("  Nothing reported.");
+            } else {
+                out.accept("  Reported (" + notes.size() + "):");
+                for (int i = 0; i < notes.size(); i++) out.accept("   " + (i + 1) + ". " + notes.get(i).line());
+            }
+            out.accept("  Full record: " + record.file());
+        }
     }
 }

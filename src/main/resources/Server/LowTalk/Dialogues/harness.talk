@@ -23,38 +23,38 @@ include: _harness_shared
 
 == start
 Harness tester. Pick an area; each option runs one check and comes back.
--> What the player sees: notifications
+-> What the player sees: notifications <<if remaining("notify") > 0>>
     <<jump area_notify>>
--> What the player sees: titles
+-> What the player sees: titles <<if remaining("title") > 0>>
     <<jump area_title>>
--> Items
+-> Items <<if remaining("items") > 0>>
     <<jump area_items>>
--> The player's body
+-> The player's body <<if remaining("body") > 0>>
     <<jump area_body>>
--> The world
+-> The world <<if remaining("world") > 0>>
     <<jump area_world>>
--> Media
+-> Media <<if remaining("media") > 0>>
     <<jump area_media>>
--> More...
+-> More... <<if remaining("npc") + remaining("basics") + remaining("input") + remaining("random") + remaining("format") + remaining("progress") + remaining("memory") > 0>>
     <<jump start_more>>
 -> Leave
     <<end>>
 
 == start_more
 The rest: this NPC, the language itself, and what gets remembered.
--> This NPC
+-> This NPC <<if remaining("npc") > 0>>
     <<jump area_npc>>
--> Choices and flow
+-> Choices and flow <<if remaining("basics") > 0>>
     <<jump area_basics>>
--> Typed input
+-> Typed input <<if remaining("input") > 0>>
     <<jump area_input>>
--> Random and time
+-> Random and time <<if remaining("random") > 0>>
     <<jump area_random>>
--> Format extras
+-> Format extras <<if remaining("format") > 0>>
     <<jump area_format>>
--> Objectives and standing
+-> Objectives and standing <<if remaining("progress") > 0>>
     <<jump area_progress>>
--> Memory
+-> Memory <<if remaining("memory") > 0>>
     <<jump area_memory>>
 -> Back
     <<jump start>>
@@ -63,9 +63,9 @@ The rest: this NPC, the language itself, and what gets remembered.
 
 == area_notify
 Notifications appear in the corner and fade by themselves.
--> A plain toast
+-> A plain toast <<if not checked("notify.toast")>>
     <<jump check_notify_toast>>
--> A warning toast
+-> A warning toast <<if not checked("notify.warning")>>
     <<jump check_notify_warning>>
 -> Back
     <<jump start>>
@@ -85,15 +85,15 @@ Notifications appear in the corner and fade by themselves.
 == area_title
 The styles are the game's own, so a server has the ones its version shipped: Default and Major everywhere,
 GoblinBreach and VoidEviction from 0.7. Each should look plainly different.
--> Default, no style named
+-> Default, no style named <<if not checked("title.default")>>
     <<jump check_title_default>>
--> Default written the old way, as "minor"
+-> Default written the old way, as "minor" <<if not checked("title.minor.alias")>>
     <<jump check_title_minor_alias>>
--> Major
+-> Major <<if not checked("title.major")>>
     <<jump check_title_major>>
--> GoblinBreach (0.7 and later)
+-> GoblinBreach (0.7 and later) <<if not checked("title.goblinbreach")>>
     <<jump check_title_goblinbreach>>
--> VoidEviction (0.7 and later)
+-> VoidEviction (0.7 and later) <<if not checked("title.voideviction")>>
     <<jump check_title_voideviction>>
 -> Back
     <<jump start>>
@@ -127,11 +127,11 @@ GoblinBreach and VoidEviction from 0.7. Each should look plainly different.
 
 == area_items
 You are holding {count("Food_Bread")} bread.
--> Give me two bread
+-> Give me two bread <<if not checked("items.give")>>
     <<jump check_items_give>>
--> Take one back
+-> Take one back <<if not checked("items.take")>>
     <<jump check_items_take>>
--> Read what I am holding
+-> Read what I am holding <<if not checked("items.count")>>
     <<jump check_items_count>>
 -> Back
     <<jump start>>
@@ -152,13 +152,13 @@ count() says {count("Food_Bread")}, and has("Food_Bread") is {has("Food_Bread")}
 
 == area_body
 Health and effects.
--> Heal me fully
+-> Heal me fully <<if not checked("body.heal")>>
     <<jump check_body_heal>>
--> Set my health to 10
+-> Set my health to 10 <<if not checked("body.stat")>>
     <<jump check_body_stat>>
--> Give me regeneration
+-> Give me regeneration <<if not checked("body.effect")>>
     <<jump check_body_effect>>
--> Take it away again
+-> Take it away again <<if not checked("body.cure")>>
     <<jump check_body_cure>>
 -> Back
     <<jump start>>
@@ -183,13 +183,13 @@ Health and effects.
 
 == area_world
 It is hour {hour()} and the weather is {weather()}.
--> Make it rain
+-> Make it rain <<if not checked("world.weather")>>
     <<jump check_world_weather>>
--> Clear the sky
+-> Clear the sky <<if not checked("world.weather.clear")>>
     <<jump check_world_weather_clear>>
--> Set it to noon
+-> Set it to noon <<if not checked("world.time")>>
     <<jump check_world_time>>
--> Read a translated string
+-> Read a translated string <<if not checked("world.translate")>>
     <<jump check_world_translate>>
 -> Back
     <<jump start>>
@@ -216,13 +216,13 @@ t() gives "{t("server.lowtalk.hint.talk")}", which should read as words rather t
 
 == area_media
 Music, particles and the camera.
--> Play a music container
+-> Play a music container <<if not checked("media.music")>>
     <<jump check_media_music>>
--> Back to the area's own music
+-> Back to the area's own music <<if not checked("media.music.clear")>>
     <<jump check_media_music_clear>>
--> Particles on this NPC
+-> Particles on this NPC <<if not checked("media.vfx")>>
     <<jump check_media_vfx>>
--> Shake my camera
+-> Shake my camera <<if not checked("media.camera")>>
     <<jump check_media_camera>>
 -> Back
     <<jump start>>
@@ -251,15 +251,15 @@ Music, particles and the camera.
 
 == area_npc
 This NPC's own name, state and animation. Renaming persists, so put it back when you are done.
--> Play an animation
+-> Play an animation <<if not checked("npc.anim")>>
     <<jump check_npc_anim>>
--> Play a sound here
+-> Play a sound here <<if not checked("npc.sound")>>
     <<jump check_npc_sound>>
--> Rename me
+-> Rename me <<if not checked("npc.rename")>>
     <<jump check_npc_rename>>
--> Give me my name back
+-> Give me my name back <<if not checked("npc.rename.restore")>>
     <<jump check_npc_rename_restore>>
--> Turn hostile, then friendly again
+-> Turn hostile, then friendly again <<if not checked("npc.attitude")>>
     <<jump check_npc_attitude>>
 -> Back
     <<jump start_more>>
@@ -292,9 +292,9 @@ Now hostile. Press Continue and I will calm down again.
 
 == area_basics
 Options can be hidden, shown greyed out, or offered once. The reveal below sets a variable the next two read.
--> Two lines with a Continue between them
+-> Two lines with a Continue between them <<if not checked("basics.continue")>>
     <<jump check_basics_continue>>
--> Reveal the hidden option
+-> Reveal the hidden option <<if not checked("basics.reveal")>>
     <<jump check_basics_reveal>>
 -> The hidden option (only here once revealed) <<if $harness.revealed>>
     <<jump check_basics_hidden>>
@@ -325,9 +325,9 @@ This one was visible but greyed out before the reveal, and refused the click.
 
 == area_input
 A text box takes what you type; Enter and OK should behave the same.
--> Type a word
+-> Type a word <<if not checked("input.word")>>
     <<jump check_input_word>>
--> Type a number, and read plural()
+-> Type a number, and read plural() <<if not checked("input.plural")>>
     <<jump check_input_plural>>
 -> Back
     <<jump start_more>>
@@ -350,11 +350,11 @@ A text box takes what you type; Enter and OK should behave the same.
 
 == area_random
 Chance, dice and the clock.
--> Flip a coin with chance()
+-> Flip a coin with chance() <<if not checked("random.chance")>>
     <<jump check_random_chance>>
--> Roll a number with random()
+-> Roll a number with random() <<if not checked("random.number")>>
     <<jump check_random_number>>
--> Count visits with ordinal()
+-> Count visits with ordinal() <<if not checked("random.ordinal")>>
     <<jump check_random_ordinal>>
 -> Back
     <<jump start_more>>
@@ -380,13 +380,13 @@ This is the {ordinal($npc.rolls)} roll for this NPC, counted per NPC rather than
 
 == area_format
 [Greetings|Hello|Well met], {player}. Expect that word to vary between visits.
--> A random block picks one of three
+-> A random block picks one of three <<if not checked("format.variation")>>
     <<jump check_format_random>>
 -> A once-only option <<once>>
     <<jump check_format_once>>
--> A two second pause
+-> A two second pause <<if not checked("format.wait")>>
     <<jump check_format_wait>>
--> A line from an included file
+-> A line from an included file <<if not checked("format.include")>>
     <<jump check_format_include>>
 -> Back
     <<jump start_more>>
@@ -415,11 +415,11 @@ Counting... one...
 
 == area_progress
 Standing with my group is {reputation()}, rank "{rank()}". Objective_Gather reads "{objective("Objective_Gather")}".
--> Raise my standing by ten
+-> Raise my standing by ten <<if not checked("progress.reputation.up")>>
     <<jump check_progress_reputation_up>>
--> Lower it by ten
+-> Lower it by ten <<if not checked("progress.reputation.down")>>
     <<jump check_progress_reputation_down>>
--> Start Objective_Gather
+-> Start Objective_Gather <<if not checked("progress.objective")>>
     <<jump check_progress_objective>>
 -> Back
     <<jump start_more>>
@@ -445,15 +445,15 @@ client drops here, that is the game's tracker bug rather than this check.
 == area_memory
 Per NPC: we have met {$met ? "before" : "not before"}. Per player: you have opened a tester {$player.visits} time(s).
 Spawn a second tester with /harness npc and compare: the first line differs between them, the second does not.
--> Remember me
+-> Remember me <<if not checked("memory.npc")>>
     <<jump check_memory_npc>>
--> Count this visit, across every tester
+-> Count this visit, across every tester <<if not checked("memory.player")>>
     <<jump check_memory_player>>
--> Have I seen the marker passage? visited() says {visited("check_memory_marker")}
+-> Have I seen the marker passage? visited() says {visited("check_memory_marker")} <<if not checked("memory.visited")>>
     <<jump check_memory_visited>>
--> Go to the marker passage
+-> Go to the marker passage <<if not checked("memory.marker")>>
     <<jump check_memory_marker>>
--> Forget me again
+-> Forget me again <<if not checked("memory.reset")>>
     <<jump check_memory_reset>>
 -> Back
     <<jump start_more>>

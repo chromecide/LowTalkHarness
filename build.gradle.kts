@@ -50,6 +50,11 @@ dependencies {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    // The server jar shades org.bson, which the run record is written with, and the Hytale plugin puts that jar
+    // on the compile classpath but not the test runtime one. Without this, any test that writes or reads a
+    // record dies with NoClassDefFoundError. Adding the same jar means the tests exercise the same Document
+    // implementation the server will, rather than a Maven copy that happens to be a different version.
+    classpath += sourceSets["main"].compileClasspath
 }
 
 // Which checks a Hytale update makes worth re-running, from the archive tools/hytale-archive.sh keeps.

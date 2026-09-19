@@ -23,8 +23,14 @@ import java.util.Map;
  *
  * <p>Two separate facts are kept per check. <b>Seen</b> is recorded by watching LowTalk's own events, so it is
  * never wrong and never forgotten: it means the passage was reached or the option was picked. <b>Verdict</b> is
- * a human saying whether it looked right, because no event can tell that a title rendered in the wrong style.
- * A check that is seen but has no verdict is the interesting case — it ran, nobody said whether it worked.
+ * what somebody said about it afterwards, because no event can tell that a title rendered in the wrong style.
+ *
+ * <p><b>Silence is a pass.</b> A check that ran and drew no comment counts as PASS. That is not laziness, it is
+ * the honest reading of what happened: a person walked the tree, watched the effect, and moved on. Asking them
+ * to then type {@code /harness pass} forty-eight times produces forty-eight keystrokes of no information and a
+ * strong pull towards typing them without looking. What carries information is a complaint, so a complaint is
+ * the thing that has to be typed — see {@link #addFeedback}. An explicit verdict still wins over the implied
+ * one, whoever recorded it: a command that threw fails its check without anyone having to notice.
  */
 public final class RunRecord {
 
@@ -37,6 +43,21 @@ public final class RunRecord {
         @Nullable public String note;
         @Nullable public String firstSeen;
         @Nullable public String decidedAt;
+
+        /**
+         * What this check counts as, taking silence for a pass. Null means nobody has run it and nobody has
+         * ruled on it, which is the only state that is genuinely unknown.
+         */
+        @Nullable
+        public Verdict outcome() {
+            if (verdict != null) return verdict;
+            return seen ? Verdict.PASS : null;
+        }
+
+        /** True when the pass is only implied by having run, so nothing was said about it either way. */
+        public boolean impliedPass() {
+            return verdict == null && seen;
+        }
 
         Document toDocument() {
             Document d = new Document();
@@ -66,9 +87,68 @@ public final class RunRecord {
         }
     }
 
+    /**
+     * Something a tester said was wrong, in their own words, at the moment they noticed.
+     *
+     * <p>Free text on purpose. "station 5 title didn't show when i selected goblin" is written in two seconds
+     * without leaving the game or looking up an id; the same complaint routed through a check id is written in
+     * twenty, or not at all. Where the player was standing is recorded alongside it, so the id can usually be
+     * recovered afterwards without the person having to supply it.
+     */
+    public static final class Feedback {
+        public String at = Instant.now().toString();
+        public String text = "";
+        @Nullable public String player;
+        @Nullable public String dialogue;
+        @Nullable public String node;
+        /** The checks this was taken to be about, which are also marked FAIL. Empty when it was free-floating. */
+        public List<String> checks = new ArrayList<>();
+
+        Document toDocument() {
+            Document d = new Document();
+            d.put("at", at);
+            d.put("text", text);
+            if (player != null) d.put("player", player);
+            if (dialogue != null) d.put("dialogue", dialogue);
+            if (node != null) d.put("node", node);
+            if (!checks.isEmpty()) d.put("checks", new ArrayList<>(checks));
+            return d;
+        }
+
+        @SuppressWarnings("unchecked")
+        static Feedback fromDocument(Document d) {
+            Feedback f = new Feedback();
+            f.at = d.getString("at") == null ? f.at : d.getString("at");
+            f.text = d.getString("text") == null ? "" : d.getString("text");
+            f.player = d.getString("player");
+            f.dialogue = d.getString("dialogue");
+            f.node = d.getString("node");
+            Object cs = d.get("checks");
+            if (cs instanceof List<?> list) {
+                for (Object o : list) f.checks.add(String.valueOf(o));
+            }
+            return f;
+        }
+
+        /** One line for chat: the words first, because that is what anyone reading this wants. */
+        public String line() {
+            StringBuilder b = new StringBuilder(text);
+            if (!checks.isEmpty()) b.append("  [").append(String.join(", ", checks)).append("]");
+            else if (node != null) b.append("  [at ").append(dialogue).append("/").append(node).append("]");
+            return b.toString();
+        }
+    }
+
     private final Path file;
     private final String serverVersion;
     private final Map<String, Check> checks = new LinkedHashMap<>();
+    private final List<Feedback> feedback = new ArrayList<>();
+    /**
+     * Entries read from the file whose check no longer exists. Kept verbatim and written back out under
+     * {@code retired}: a check removed from the list should stop being counted, but a record of a real run on a
+     * real server is not ours to throw away because we renamed something.
+     */
+    private final Map<String, Document> retired = new LinkedHashMap<>();
     private boolean dirty;
 
     public RunRecord(@Nonnull Path folder, @Nonnull String serverVersion) {
@@ -91,6 +171,12 @@ public final class RunRecord {
         return checks.computeIfAbsent(id, k -> new Check());
     }
 
+    /** What a check counts as right now, silence included. Null when it has neither run nor been ruled on. */
+    @Nullable
+    public synchronized Verdict outcome(@Nonnull String id) {
+        return check(id).outcome();
+    }
+
     /** Record that a check was exercised. Idempotent; the first time is the one that is timestamped. */
     public synchronized void markSeen(@Nonnull String id) {
         Check c = check(id);
@@ -100,13 +186,62 @@ public final class RunRecord {
         dirty = true;
     }
 
-    /** Record a human's verdict, with an optional note about what was wrong. */
+    /** Record a verdict over the implied one, with an optional note about what was seen. */
     public synchronized void decide(@Nonnull String id, @Nonnull Verdict verdict, @Nullable String note) {
         Check c = check(id);
         c.verdict = verdict;
         c.note = note == null || note.isBlank() ? null : note.trim();
         c.decidedAt = Instant.now().toString();
         dirty = true;
+    }
+
+    /** Drop an explicit verdict, leaving whatever running the check implies. */
+    public synchronized void undecide(@Nonnull String id) {
+        Check c = checks.get(id);
+        if (c == null || c.verdict == null) return;
+        c.verdict = null;
+        c.note = null;
+        c.decidedAt = null;
+        dirty = true;
+    }
+
+    /**
+     * File a complaint in the tester's own words, against the checks it is taken to be about.
+     *
+     * <p>Those checks are failed by it. A pass is implied by nobody saying anything; the moment somebody says
+     * something, the implication is gone and the check is a problem until it is looked at.
+     */
+    public synchronized Feedback addFeedback(@Nonnull String text, @Nullable String player,
+                                             @Nullable String dialogue, @Nullable String node,
+                                             @Nonnull List<String> about) {
+        Feedback f = new Feedback();
+        f.text = text.trim();
+        f.player = player;
+        f.dialogue = dialogue;
+        f.node = node;
+        f.checks.addAll(about);
+        feedback.add(f);
+        for (String id : about) decide(id, Verdict.FAIL, f.text);
+        dirty = true;
+        return f;
+    }
+
+    /** Everything anyone said was wrong on this version, oldest first. */
+    public synchronized List<Feedback> feedback() {
+        return new ArrayList<>(feedback);
+    }
+
+    /** Drop one feedback entry by its position in {@link #feedback()}, and unfail what it failed. */
+    public synchronized boolean dropFeedback(int index) {
+        if (index < 0 || index >= feedback.size()) return false;
+        Feedback f = feedback.remove(index);
+        for (String id : f.checks) {
+            Check c = checks.get(id);
+            // only lift the failure this entry caused, not one recorded some other way
+            if (c != null && c.verdict == Verdict.FAIL && f.text.equals(c.note)) undecide(id);
+        }
+        dirty = true;
+        return true;
     }
 
     /** Forget a check entirely, so it can be run again from nothing. */
@@ -120,17 +255,29 @@ public final class RunRecord {
         return new ArrayList<>(checks.keySet());
     }
 
-    /** Counts: how many of the given checks are seen, decided, passed, failed. */
+    /** Ids read from the file that no longer name a check. Shown once at boot, then left alone. */
+    public synchronized List<String> retiredIds() {
+        return new ArrayList<>(retired.keySet());
+    }
+
+    /**
+     * Counts over the given checks: {@code [seen, decided, passed, failed]}.
+     *
+     * <p>Decided and passed both include the implied pass, so "decided" means "has an answer" rather than
+     * "somebody typed something". The gap worth watching is {@code ids.size() - decided}: checks nobody has
+     * run at all, which no amount of silence can speak for.
+     */
     public synchronized int[] tally(@Nonnull List<String> ids) {
         int seen = 0, decided = 0, passed = 0, failed = 0;
         for (String id : ids) {
             Check c = checks.get(id);
             if (c == null) continue;
             if (c.seen) seen++;
-            if (c.verdict == null) continue;
+            Verdict v = c.outcome();
+            if (v == null) continue;
             decided++;
-            if (c.verdict == Verdict.PASS) passed++;
-            if (c.verdict == Verdict.FAIL) failed++;
+            if (v == Verdict.PASS) passed++;
+            if (v == Verdict.FAIL) failed++;
         }
         return new int[] {seen, decided, passed, failed};
     }
@@ -140,11 +287,28 @@ public final class RunRecord {
         try {
             Document root = Document.parse(Files.readString(file, StandardCharsets.UTF_8));
             Document cs = root.get("checks", Document.class);
-            if (cs == null) return;
-            for (String id : cs.keySet()) {
-                Document d = cs.get(id, Document.class);
-                if (d != null) checks.put(id, Check.fromDocument(d));
+            if (cs != null) {
+                for (String id : cs.keySet()) {
+                    Document d = cs.get(id, Document.class);
+                    if (d == null) continue;
+                    if (Checks.byId(id) == null) retired.put(id, d);
+                    else checks.put(id, Check.fromDocument(d));
+                }
             }
+            Document old = root.get("retired", Document.class);
+            if (old != null) {
+                for (String id : old.keySet()) {
+                    Document d = old.get(id, Document.class);
+                    if (d != null) retired.putIfAbsent(id, d);
+                }
+            }
+            Object fb = root.get("feedback");
+            if (fb instanceof List<?> list) {
+                for (Object o : list) {
+                    if (o instanceof Document d) feedback.add(Feedback.fromDocument(d));
+                }
+            }
+            if (!retired.isEmpty()) dirty = true;   // move them under 'retired' on the next write
         } catch (RuntimeException | IOException e) {
             // A record we cannot read is not worth losing a test run over, but it must not be silently
             // overwritten either: keep it out of the way so the run can start clean and the file can be looked at.
@@ -172,6 +336,12 @@ public final class RunRecord {
         root.put("serverVersion", serverVersion);
         root.put("updated", Instant.now().toString());
         root.put("checks", cs);
+        if (!feedback.isEmpty()) {
+            List<Document> fs = new ArrayList<>();
+            for (Feedback f : feedback) fs.add(f.toDocument());
+            root.put("feedback", fs);
+        }
+        if (!retired.isEmpty()) root.put("retired", new Document(new LinkedHashMap<String, Object>(retired)));
         try {
             Files.createDirectories(file.getParent());
             Path tmp = file.resolveSibling(file.getFileName() + ".partial");

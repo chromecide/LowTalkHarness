@@ -27,10 +27,24 @@ Two separate facts are kept for each check:
 
 - **Seen** — the harness observed it happen. Recorded automatically from LowTalk's own events, so it is never
   forgotten and never wrong.
-- **Verdict** — a person said whether it looked right. No event can tell you that a title rendered in the wrong
-  style, so this is typed in.
+- **Verdict** — what someone said about it afterwards. No event can tell you that a title rendered in the wrong
+  style, so that has to be typed in.
 
-A check that is *seen but undecided* is the interesting state: it ran, and nobody said whether it worked.
+**Silence is a pass.** A check that ran and drew no comment counts as PASS. The alternative — a tester typing
+`/harness pass` forty-eight times at the end of a walk — produces forty-eight keystrokes carrying no
+information, and a strong pull towards typing them without looking, which is exactly the kind of record that
+reads as rigour and is not. What carries information is a complaint, so the complaint is the only thing anyone
+has to type:
+
+```
+/harness feedback station 5 title didn't show when i selected goblin
+```
+
+Free text, no id, no syntax. It is recorded against whatever passage you were last in — which is almost always
+what it is about — and that check goes FAIL with your words as the note. Everything reported this way is read
+back at the end by `/harness report`.
+
+So the only state that is genuinely unknown is **never run**, and that is what `/harness todo` counts.
 
 Records live in the server's `mods/Chromecide_LowTalkHarness/` folder, one file per server version, so testing
 0.7 never erases what 0.6.7 proved.
@@ -39,17 +53,30 @@ Records live in the server's `mods/Chromecide_LowTalkHarness/` folder, one file 
 
 | Command | What it does |
 |---|---|
-| `/harness todo` | What still needs running or judging on this server version |
+| `/harness feedback <what went wrong>` | Say it in your own words; fails the check you are on and is kept for the end |
+| `/harness report` | The pass/fail count and everything reported on this version |
+| `/harness todo` | What has never been run on this server version |
 | `/harness show <id>` | One check: the steps, what should happen, and how it went here |
-| `/harness pass <id> [--note="..."]` | Record that it looked right |
-| `/harness fail <id> [--note="..."]` | Record that it did not, with what you saw |
-| `/harness skip <id> [--note="..."]` | Record that it does not apply on this version |
+| `/harness undo` | Take back the last piece of feedback, and the failure it caused |
+| `/harness npc` | Put the tester NPC in front of you |
+| `/harness hud` | The corner panel, on or off |
+| `/harness reset <id>` | Forget a check so the tester offers it again |
+| `/harness pass\|fail\|skip <id> [--note="..."]` | Override by hand |
+
+`feedback` takes a check id as its first word if you give one — `/harness feedback title.goblinbreach it drew
+as Major` — for when you have walked on before writing it down. Feedback that matches no check is kept anyway,
+unattached, and read out with the rest: a complaint the harness cannot file is still a complaint.
 
 `pass` is refused for a check the harness never saw run, because a record of passes that were never executed is
-worse than no record.
+worse than no record. It is otherwise an override, for lifting a failure after a second look.
 
-The note is an option, not a positional argument, and a note with spaces must be quoted:
-`/harness fail title.goblinbreach --note="looked identical to Major"`.
+On `pass`/`fail`/`skip` the note is an option, not a positional argument, and must be quoted if it has spaces:
+`/harness fail title.goblinbreach --note="looked identical to Major"`. `feedback` takes the rest of the line as
+written, which is the point of it.
+
+A check removed from `Checks.java` leaves its result behind in records written before it went. Those are moved
+to a `retired` section of the file at boot and logged once: they stop being counted, without the file losing
+what really happened on a real server.
 
 ## Which checks to re-run after a Hytale update
 
