@@ -4,9 +4,16 @@
 # and which has no hostile branch, no attack and no combat. So <<attitude hostile>> on it changes a value
 # nothing reads, and "does a hostile NPC behave like one" was unanswerable there.
 #
-# A goblin scavenger answers it. It is spawned calm -- its attitude to whoever spawned it is overridden to
-# friendly -- or it would attack instead of talking. This dialogue is what makes it hostile, and only for as
-# long as it takes to see.
+# A goblin scavenger answers it. Two things learned by running it, both of which shape this file:
+#
+#   1. It does nothing while the window is open. Hostility is only visible once the conversation closes, so
+#      the check ends by handing control back rather than by showing anything.
+#   2. So it cannot put itself back at the end of the same passage. <<wait>> was tried and is worse than
+#      useless here: going hostile means attacking, being attacked closes the window, and everything after
+#      the wait is abandoned with it. Calming down is an option the tester picks, when they have seen enough.
+#   3. And calming down does not stop it. An attitude decides who an NPC starts on, not a fight already
+#      under way; <<attitude friendly>> ran twice on it mid-swing and it kept swinging. Despawning is the
+#      way out, which is why "send me away" is offered everywhere and is the last word on this page.
 
 npc: @harness_fighter
 title: LowTalk harness (fighter)
@@ -14,15 +21,16 @@ speaker: Scavenger
 
 == start
 I can actually fight, which the tester cannot. My attitude to you is {attitude()}.
--> Turn on me for six seconds <<if not checked("attitude.behaviour")>>
+-> Turn hostile <<if not (attitude() == "hostile")>>
     <<jump check_attitude_behaviour>>
+-> Make me friendly again <<if attitude() == "hostile">>
+    <<jump calm>>
 -> Send me away
     <<jump leave>>
 -> Nothing for now
     <<end>>
 
 == check_attitude_behaviour
-Stand back. Switch to creative first if you would rather not be hit.
 <<attitude hostile>>
 <<if attitude() == "hostile">>
     <<jump check_attitude_behaviour_ok>>
@@ -31,17 +39,23 @@ Stand back. Switch to creative first if you would rather not be hit.
 <<endif>>
 
 == check_attitude_behaviour_ok
-Hostile now, and I mean it. Close this window and I go back to friendly, however it closes -- including me knocking you out of it. The question this answers is the one the tester could not: whether an NPC whose role has a hostile branch actually comes at you. If I just stand here, say so with /harness feedback.
--> Send me away
-    <<jump leave>>
--> Stay there
+Hostile, though you would not know it from in here: I do nothing while we are talking. Close this window and watch. Then talk to me again and pick Calm down. Switch to creative first if you would rather not be hit.
+-> Leave me to it
     <<end>>
+-> On second thoughts, make me friendly again
+    <<jump calm>>
 
 == check_attitude_behaviour_bad
-Wrong, or the assertion is. attitude() reads {attitude()}. I have set myself friendly again either way.
+Wrong, or the assertion is. attitude() reads {attitude()} rather than hostile.
+-> Calm down
+    <<jump calm>>
+
+== calm
+<<attitude friendly>>
+My attitude reads {attitude()} again -- but if I am already swinging at you, that will not stop me. An attitude decides who I start on, not a fight I am in, and the game gives nobody a way to call one off. Send me away.
 -> Send me away
     <<jump leave>>
--> Stay there
+-> Leave me be
     <<end>>
 
 == leave

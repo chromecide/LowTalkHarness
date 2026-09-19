@@ -199,7 +199,10 @@ public final class Checks {
         add(new Check("attitude.behaviour", Kind.STATION, "A hostile NPC actually behaves like one",
                 List.of("Run /harness fighter to put a goblin in front of you.",
                         "Talk to it and let it turn on you."),
-                "It comes at you while hostile and stops when it is set friendly again. The tester itself "
+                "It comes at you once hostile -- and only once the dialogue closes, because it does nothing "
+                        + "while the window is open. It will NOT stop when set friendly again: an attitude "
+                        + "decides who an NPC starts on, not a fight in progress, so send it away instead. "
+                        + "The tester itself "
                         + "cannot answer this: its role is built on Template_Temple, which has attitude "
                         + "sensors for Neutral and Friendly and no hostile branch, no attack and no combat, "
                         + "so setting it hostile changes a value nothing in the role reads.",
