@@ -8,6 +8,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.Map;
 import java.util.List;
 import java.util.Locale;
@@ -238,5 +240,54 @@ class CheckCoverageTest {
     private static boolean spoken(String line) {
         if (line.isBlank() || Character.isWhitespace(line.charAt(0))) return false;
         return !line.startsWith("#") && !line.startsWith("==") && !line.startsWith("->") && !line.startsWith("<<");
+    }
+
+    /**
+     * Every function and command the tree uses is one the harness registers.
+     *
+     * <p>LowTalk reads an unknown function as false and an unknown command as a warning, so a dialogue that
+     * calls something nobody provides does not fail — it quietly takes the other branch. The fighter's
+     * check asks {@code player_detectable()} before it starts, and when that function was removed by mistake
+     * during a tidy-up the check reported that the player was invisible, on every run, to a tester who was
+     * standing right in front of it. The server said so in a warning at boot that nobody read.
+     *
+     * <p>Registrations live in Java and calls live in .talk files, so nothing but a test connects them.
+     */
+    @Test
+    void everythingTheTreeCallsIsRegistered() throws Exception {
+        Path plugin = Path.of("src/main/java/com/chromecide/lowtalkharness/HarnessPlugin.java");
+        String java = Files.readString(plugin);
+        Set<String> registered = new LinkedHashSet<>();
+        Matcher reg = Pattern.compile("register(?:Function|Command)\\(\"([a-z_]+)\"").matcher(java);
+        while (reg.find()) registered.add(reg.group(1));
+
+        // what LowTalk itself provides; the tree may use those freely
+        Set<String> builtIn = Set.of("player", "npc", "has", "count", "visited", "objective", "attitude",
+                "perm", "hour", "random", "chance", "ordinal", "plural", "reputation", "rank", "stat",
+                "max_stat", "effect", "knows", "objective_line", "t", "weather");
+
+        List<String> unknown = new ArrayList<>();
+        Path dialogues = Path.of("src/main/resources/Server/LowTalk/Dialogues");
+        try (var files = Files.list(dialogues)) {
+            for (Path talk : files.filter(f -> f.toString().endsWith(".talk")).toList()) {
+                // Only where an expression can live: inside {...} and inside <<...>>. Prose is full of
+                // things that look like calls -- "you have opened a tester 3 time(s)" is not a call to time().
+                String text = Files.readString(talk);
+                Matcher region = Pattern.compile("\\{[^}]*\\}|<<[^>]*>>").matcher(text);
+                while (region.find()) {
+                    Matcher call = Pattern.compile("\\b([a-z_]{3,})\\(").matcher(region.group());
+                    while (call.find()) {
+                        String name = call.group(1);
+                        if (!registered.contains(name) && !builtIn.contains(name) && !name.equals("if")) {
+                            unknown.add(talk.getFileName() + ": " + name + "()");
+                        }
+                    }
+                }
+            }
+        }
+        assertTrue(unknown.isEmpty(),
+                "the tree calls these and nothing registers them, so LowTalk reads them as false and the "
+                        + "checks quietly take the wrong branch:\n  "
+                        + String.join("\n  ", unknown.stream().distinct().toList()));
     }
 }
