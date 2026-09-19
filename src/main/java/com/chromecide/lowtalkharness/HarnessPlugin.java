@@ -418,10 +418,36 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
         getLogger().at(Level.INFO).log("[harness] opened %s", ctx.getDialogueId());
     }
 
-    /** Back to the whole picture when the conversation closes. */
+    /**
+     * Back to the whole picture when the conversation closes — and calm the fighter down.
+     *
+     * <p>The fighter used to put itself back with {@code <<attitude friendly>>} after a wait, at the end of
+     * the same passage that made it hostile. It never got there: going hostile means attacking, being
+     * attacked closes the page, and everything after the wait was abandoned. The goblin stayed hostile until
+     * it was despawned.
+     *
+     * <p>So the cleanup does not live in the conversation. Whatever ends it — the player walking off, the
+     * page being dismissed, a goblin hitting them — this runs.
+     */
     @Override
     public void onEnd(@Nonnull DialogueContext ctx) {
         pointHudAt(ctx.getPlayer().getUuid(), null);
+        if (ctx.getDialogueId().startsWith("harness_fighter")) calmDown(ctx);
+    }
+
+    /** Put the fighter back to friendly towards this player, whatever state the conversation ended in. */
+    private void calmDown(@Nonnull DialogueContext ctx) {
+        try {
+            Ref<EntityStore> npc = ctx.getNpcRef();
+            var store = ctx.getEntityStore();
+            Ref<EntityStore> player = ctx.getPlayer().getReference();
+            if (npc == null || store == null || player == null || !npc.isValid() || !player.isValid()) return;
+            com.hypixel.hytale.server.npc.role.support.WorldSupport.get(npc, store)
+                    .overrideAttitude(player, com.hypixel.hytale.server.core.asset.type.attitude.Attitude.FRIENDLY, 1.0e9);
+            getLogger().at(Level.INFO).log("[harness] fighter calmed down after the conversation ended");
+        } catch (RuntimeException e) {
+            getLogger().at(Level.WARNING).withCause(e).log("could not calm the fighter down");
+        }
     }
 
     /**

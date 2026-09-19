@@ -196,15 +196,15 @@ public final class Checks {
                         + "pass with nothing for the tester to interrupt. It does not show the NPC behaving "
                         + "differently, and on this NPC it cannot: see attitude.behaviour.",
                 "lowtalk:attitude", "AttitudeGroup");
-        gap("attitude.behaviour", Kind.WORLD, "A hostile NPC actually behaves like one",
-                List.of("Spawn an NPC whose role has a hostile attitude branch.",
-                        "Set it hostile with <<attitude>> and watch what it does."),
-                "It turns on the player. The harness tester cannot: its role is built on Template_Temple, "
-                        + "whose attitude sensors cover Neutral and Friendly and which contains no Hostile "
-                        + "branch, no attack and no combat of any kind. Setting it hostile changes a value "
-                        + "nothing in the role reads, which is why the tester could not tell whether hostility "
-                        + "was working -- it was not, and could not be.",
-                "lowtalk:attitude", "AttitudeGroup", "WorldSupport");
+        add(new Check("attitude.behaviour", Kind.STATION, "A hostile NPC actually behaves like one",
+                List.of("Run /harness fighter to put a goblin in front of you.",
+                        "Talk to it and let it turn on you."),
+                "It comes at you while hostile and stops when it is set friendly again. The tester itself "
+                        + "cannot answer this: its role is built on Template_Temple, which has attitude "
+                        + "sensors for Neutral and Friendly and no hostile branch, no attack and no combat, "
+                        + "so setting it hostile changes a value nothing in the role reads.",
+                List.of("lowtalk:attitude", "AttitudeGroup", "WorldSupport"), null,
+                "harness_fighter/check_attitude_behaviour_ok", "harness_fighter/check_attitude_behaviour_bad"));
 
         tree("basics.continue", "check_basics_continue", "Two lines in a row give a Continue",
                 "A Continue button between the lines rather than the option list, and the options back after.",

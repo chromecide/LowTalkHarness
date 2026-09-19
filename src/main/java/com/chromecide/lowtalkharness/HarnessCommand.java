@@ -37,6 +37,7 @@ public class HarnessCommand extends AbstractCommandCollection {
         this.addSubCommand(new Todo(plugin));
         this.addSubCommand(new Hud(plugin));
         this.addSubCommand(new Npc());
+        this.addSubCommand(new Fighter());
         this.addSubCommand(new Reset(plugin));
         this.addSubCommand(new Show(plugin));
         this.addSubCommand(new Pass(plugin));
@@ -177,6 +178,35 @@ public class HarnessCommand extends AbstractCommandCollection {
                 return;
             }
             HarnessNpc.spawnFacing(store, transform.getPosition(), line -> context.sendMessage(Message.raw(line)));
+        }
+    }
+
+    /**
+     * Put an NPC that can fight in front of you.
+     *
+     * <p>Separate from {@code /harness npc} because it is not the tester and should not be standing in the
+     * corridor by default: it is a goblin, and the check it exists for ends with it attacking whoever asked.
+     */
+    static class Fighter extends com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand {
+        Fighter() {
+            super("fighter", "Spawn the NPC that can actually be hostile, for the attitude behaviour check");
+            this.requirePermission(PERMISSION);
+        }
+
+        @Override
+        protected void execute(@Nonnull CommandContext context,
+                               @Nonnull com.hypixel.hytale.component.Store<com.hypixel.hytale.server.core.universe.world.storage.EntityStore> store,
+                               @Nonnull com.hypixel.hytale.component.Ref<com.hypixel.hytale.server.core.universe.world.storage.EntityStore> entity,
+                               @Nonnull com.hypixel.hytale.server.core.universe.PlayerRef player,
+                               @Nonnull com.hypixel.hytale.server.core.universe.world.World world) {
+            var transform = store.getComponent(entity,
+                    com.hypixel.hytale.server.core.modules.entity.component.TransformComponent.getComponentType());
+            if (transform == null) {
+                context.sendMessage(Message.raw("Could not work out where you are standing."));
+                return;
+            }
+            HarnessNpc.spawnFighter(store, transform.getPosition(), entity,
+                    line -> context.sendMessage(Message.raw(line)));
         }
     }
 

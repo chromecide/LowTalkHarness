@@ -1,0 +1,49 @@
+# The one NPC in the harness that can fight.
+#
+# The tester cannot: its role is built on Template_Temple, whose attitude sensors cover Neutral and Friendly
+# and which has no hostile branch, no attack and no combat. So <<attitude hostile>> on it changes a value
+# nothing reads, and "does a hostile NPC behave like one" was unanswerable there.
+#
+# A goblin scavenger answers it. It is spawned calm -- its attitude to whoever spawned it is overridden to
+# friendly -- or it would attack instead of talking. This dialogue is what makes it hostile, and only for as
+# long as it takes to see.
+
+npc: @harness_fighter
+title: LowTalk harness (fighter)
+speaker: Scavenger
+
+== start
+I can actually fight, which the tester cannot. My attitude to you is {attitude()}.
+-> Turn on me for six seconds <<if not checked("attitude.behaviour")>>
+    <<jump check_attitude_behaviour>>
+-> Send me away
+    <<jump leave>>
+-> Nothing for now
+    <<end>>
+
+== check_attitude_behaviour
+Stand back. Switch to creative first if you would rather not be hit.
+<<attitude hostile>>
+<<if attitude() == "hostile">>
+    <<jump check_attitude_behaviour_ok>>
+<<else>>
+    <<jump check_attitude_behaviour_bad>>
+<<endif>>
+
+== check_attitude_behaviour_ok
+Hostile now, and I mean it. Close this window and I go back to friendly, however it closes -- including me knocking you out of it. The question this answers is the one the tester could not: whether an NPC whose role has a hostile branch actually comes at you. If I just stand here, say so with /harness feedback.
+-> Send me away
+    <<jump leave>>
+-> Stay there
+    <<end>>
+
+== check_attitude_behaviour_bad
+Wrong, or the assertion is. attitude() reads {attitude()}. I have set myself friendly again either way.
+-> Send me away
+    <<jump leave>>
+-> Stay there
+    <<end>>
+
+== leave
+Right you are.
+<<despawn>>
