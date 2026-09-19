@@ -190,9 +190,21 @@ public final class Checks {
         tree("npc.rename.restore", "check_npc_rename_restore", "<<npc_name>> puts the name back",
                 "The nameplate returns to \"LowTalk harness\". Renaming persists, so this matters.",
                 "lowtalk:npc_name");
-        tree("npc.attitude", "check_npc_attitude", "<<attitude>> changes how the NPC regards the player",
-                "attitude() reads the current value, the NPC turns hostile, then calms when set friendly again.",
+        judged("npc.attitude", "check_npc_attitude_ok", "check_npc_attitude_bad",
+                "<<attitude>> changes how the NPC regards the player",
+                "attitude() reads hostile while the NPC is hostile and friendly once it is set back, in one "
+                        + "pass with nothing for the tester to interrupt. It does not show the NPC behaving "
+                        + "differently, and on this NPC it cannot: see attitude.behaviour.",
                 "lowtalk:attitude", "AttitudeGroup");
+        gap("attitude.behaviour", Kind.WORLD, "A hostile NPC actually behaves like one",
+                List.of("Spawn an NPC whose role has a hostile attitude branch.",
+                        "Set it hostile with <<attitude>> and watch what it does."),
+                "It turns on the player. The harness tester cannot: its role is built on Template_Temple, "
+                        + "whose attitude sensors cover Neutral and Friendly and which contains no Hostile "
+                        + "branch, no attack and no combat of any kind. Setting it hostile changes a value "
+                        + "nothing in the role reads, which is why the tester could not tell whether hostility "
+                        + "was working -- it was not, and could not be.",
+                "lowtalk:attitude", "AttitudeGroup", "WorldSupport");
 
         tree("basics.continue", "check_basics_continue", "Two lines in a row give a Continue",
                 "A Continue button between the lines rather than the option list, and the options back after.",

@@ -297,11 +297,28 @@ This NPC's own name, state and animation. Renaming persists, so put it back when
 <<jump area_npc>>
 
 == check_npc_attitude
-My attitude to you is {attitude()}.
+My attitude to you starts at {attitude()}. I will turn hostile and calm down again without stopping, so there is no half-way for you to walk out of.
 <<attitude hostile>>
-Now hostile. Press Continue and I will calm down again.
+<<if not (attitude() == "hostile")>>
+    <<attitude friendly>>
+    <<jump check_npc_attitude_bad>>
+<<endif>>
 <<attitude friendly>>
-<<jump area_npc>>
+<<if attitude() == "friendly">>
+    <<jump check_npc_attitude_ok>>
+<<else>>
+    <<jump check_npc_attitude_bad>>
+<<endif>>
+
+== check_npc_attitude_ok
+attitude() read hostile while I was hostile and friendly once I was not. What it cannot show you is any change in how I behave: my role has no hostile branch at all, so there is nothing to see. That half is a gap, not a pass.
+-> Back
+    <<jump area_npc>>
+
+== check_npc_attitude_bad
+Wrong, or my assertion is. attitude() now reads {attitude()}. I have set myself friendly again either way.
+-> Back
+    <<jump area_npc>>
 
 # ---- choices and flow ---------------------------------------------------------------------------------------
 
