@@ -39,11 +39,21 @@ Do them in order. Do not overlap them.
 
 Nothing in this phase happens once the walk has started.
 
-### 2. Ground state — one command, before anything is judged
+### 2. Ground state — before anything is judged
 
-- `/lowtalk testworld build`. It rebuilds the corridor, respawns the stations, and clears the block bindings
-  and NPCs inside it.
-- For a release candidate, start from a **fresh world**, not an accumulated one.
+- For an ordinary session: `/lowtalk testworld build`. It rebuilds the corridor, respawns the stations, and
+  clears the block bindings and NPCs inside it.
+- **For a gate walk, reset the world entirely**: `tools/reset-world.sh <server directory>`, with the server
+  stopped. It deletes the worlds and the mod's own data — bindings, NPC tags, dialogue variables — and keeps
+  the device login, the config and the permissions. The corridor, the tester and any bound blocks are then
+  rebuilt as part of the walk.
+
+  Delete the run record too, so the walk starts from an empty file rather than a reset one.
+
+  This is not caution for its own sake. Accumulated state has made checks pass and fail for reasons that had
+  nothing to do with the jar: a binding that outlived the door it was on, a goblin that came back hostile
+  because its calm was runtime-only, an NPC still carrying a name from days earlier. None of it is visible
+  while walking, and all of it looks exactly like a result.
 
 This phase exists because of the door. A door had been knocked into the corridor wall and bound days earlier;
 a later rebuild filled the hole back in and left the binding pointing at solid stone. The next restart looked
