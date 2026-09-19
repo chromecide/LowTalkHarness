@@ -290,12 +290,11 @@ public final class Checks {
                         + "sub-states are defined for it. The game's Test_State_* roles define several and "
                         + "would close this.",
                 "lowtalk:state", "NPCPlugin");
-        gap("perm.check", Kind.SETUP, "perm() reads the player's permissions",
-                List.of("Guard a line with perm(\"some.node\").", "Open it as a player who is not an admin."),
-                "The line shows only with the permission. The tester tried to do this with one player, by "
-                        + "asking about a node nobody holds, and the harness proved it cannot: an Admin holds "
-                        + "the wildcard, so perm() answered true for lowtalk.harness.nobody.holds.this. It "
-                        + "needs a second, unprivileged player.",
+        judged("perm.check", "check_perm_ok", "check_perm_bad", "perm() reads the player's permissions",
+                "perm() is false while the node is denied to this player and true once it is granted, with "
+                        + "the player put back as they were afterwards. This was a gap twice over: it needs "
+                        + "one player in two permission states, and an Admin holds the wildcard so nothing "
+                        + "comes back false. A deny entry beats the wildcard, and the tester writes one.",
                 "lowtalk:perm");
         tree("player.npc.names", "check_player_npc_names", "{player} and {npc} interpolate the right names",
                 "The line reads your own name and the tester's, not the literal braces and not each other's.",

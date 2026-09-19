@@ -180,6 +180,24 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
         // What states this NPC's role actually has, asked of the role rather than read out of its JSON by
         // eye. The first version of the state check asserted against "Stopped", a word that appears in the
         // template file and is not one of its states, and the check failed for that reason alone.
+        // Permissions, moved on the player mid-conversation. perm() was a gap for the stated reason that it
+        // needs "the same player with and without a permission", which no dialogue could arrange -- and an
+        // Admin holds the wildcard, so nothing they are asked about comes back false. Both halves turn out to
+        // be arrangeable: a node may be written as a deny with a leading minus, user permissions are consulted
+        // before group ones, and a deny is matched before the wildcard. So the tester can take a permission
+        // away from an admin, ask, give it back, ask again, and put everything back as it found it.
+        //
+        // Scoped to lowtalkharness.* and nothing else. This is a privilege-changing command in a test mod;
+        // it has no business being able to name a permission that means something.
+        api.registerCommand("perm_deny", "<<perm_deny lowtalkharness.perm.probe>>",
+                "Harness only: deny the player a lowtalkharness.* node, overriding any group grant.",
+                (ctx, args) -> permWrite(ctx, args, true));
+        api.registerCommand("perm_grant", "<<perm_grant lowtalkharness.perm.probe>>",
+                "Harness only: grant the player a lowtalkharness.* node.",
+                (ctx, args) -> permWrite(ctx, args, false));
+        api.registerCommand("perm_clear", "<<perm_clear lowtalkharness.perm.probe>>",
+                "Harness only: remove both the grant and the deny, leaving the player as they were.",
+                (ctx, args) -> permClear(ctx, args));
         api.registerFunction("npc_states", "npc_states()",
                 "Harness only: the states this dialogue's NPC role defines, comma separated.",
                 (ctx, args) -> String.join(", ", stateNames(ctx)));
@@ -245,6 +263,41 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
                     }
                     return (double) left;
                 });
+    }
+
+    /** The one namespace these commands may touch. Anything else is a bug or a mistake, and refused. */
+    private static final String PERM_PREFIX = "lowtalkharness.";
+
+    @Nullable
+    private static String checkedNode(@Nonnull java.util.List<String> args) {
+        if (args.isEmpty()) return null;
+        String node = args.get(0).trim();
+        return node.startsWith(PERM_PREFIX) ? node : null;
+    }
+
+    /** Write a grant or a deny for the player, clearing the opposite so the two cannot both be present. */
+    @Nullable
+    private String permWrite(@Nonnull DialogueContext ctx, @Nonnull java.util.List<String> args, boolean deny) {
+        String node = checkedNode(args);
+        if (node == null) return "this command only takes a " + PERM_PREFIX + "* permission";
+        UUID id = ctx.getPlayer().getUuid();
+        var perms = com.hypixel.hytale.server.core.permissions.PermissionsModule.get();
+        perms.removeUserPermission(id, java.util.Set.of(node, "-" + node));
+        perms.addUserPermission(id, java.util.Set.of(deny ? "-" + node : node));
+        getLogger().at(Level.INFO).log("[harness] %s %s for %s", deny ? "denied" : "granted", node, id);
+        return null;
+    }
+
+    /** Put the player back exactly as they were: neither granted nor denied at the user level. */
+    @Nullable
+    private String permClear(@Nonnull DialogueContext ctx, @Nonnull java.util.List<String> args) {
+        String node = checkedNode(args);
+        if (node == null) return "this command only takes a " + PERM_PREFIX + "* permission";
+        UUID id = ctx.getPlayer().getUuid();
+        com.hypixel.hytale.server.core.permissions.PermissionsModule.get()
+                .removeUserPermission(id, java.util.Set.of(node, "-" + node));
+        getLogger().at(Level.INFO).log("[harness] cleared %s for %s", node, id);
+        return null;
     }
 
     /** Every state name this dialogue's NPC role defines, in the order the role lists them. */

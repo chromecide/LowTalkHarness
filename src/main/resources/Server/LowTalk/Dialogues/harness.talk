@@ -69,7 +69,7 @@ The rest: this NPC, the language itself, and what gets remembered.
 What the player is: what they are called, what they may do, what they know, and what is remembered of them.
 -> Memory <<if remaining("memory") > 0>>
     <<jump area_memory>>
--> The player themselves <<if remaining("player") + remaining("learn") > 0>>
+-> The player themselves <<if remaining("player") + remaining("perm") + remaining("learn") > 0>>
     <<jump area_player>>
 -> Back
     <<jump start_more>>
@@ -506,6 +506,8 @@ Forgotten. The line above should go back to saying we have not met.
 The player themselves. Each of these checks itself where it can, so you mostly just read what happened.
 -> The names in text <<if not checked("player.npc.names")>>
     <<jump check_player_npc_names>>
+-> What the player is allowed to do <<if not checked("perm.check")>>
+    <<jump check_perm>>
 -> Learning a recipe <<if not checked("learn.recipe")>>
     <<jump check_learn_recipe>>
 -> Back
@@ -513,6 +515,31 @@ The player themselves. Each of these checks itself where it can, so you mostly j
 
 == check_player_npc_names
 {player}, I am {npc}. Your name should be your own and mine should be this tester's, and neither should read as braces or as the other one.
+-> Back
+    <<jump area_player>>
+
+== check_perm
+Permissions. I will take a test permission away from you, ask, give it back, ask again, and put you back as you were.
+<<perm_deny lowtalkharness.perm.probe>>
+<<if perm("lowtalkharness.perm.probe")>>
+    <<perm_clear lowtalkharness.perm.probe>>
+    <<jump check_perm_bad>>
+<<endif>>
+<<perm_grant lowtalkharness.perm.probe>>
+<<if not perm("lowtalkharness.perm.probe")>>
+    <<perm_clear lowtalkharness.perm.probe>>
+    <<jump check_perm_bad>>
+<<endif>>
+<<perm_clear lowtalkharness.perm.probe>>
+<<jump check_perm_ok>>
+
+== check_perm_ok
+False while denied, true once granted, and you are back as you were. A line guarded on a permission shows to the right people.
+-> Back
+    <<jump area_player>>
+
+== check_perm_bad
+Wrong, or my assertion is. perm() now reads {perm("lowtalkharness.perm.probe")} and direct reads {probe_perm("lowtalkharness.perm.probe")}. Your permissions have been put back either way, and it is in the log.
 -> Back
     <<jump area_player>>
 
