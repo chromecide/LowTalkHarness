@@ -281,15 +281,21 @@ public final class Checks {
                         + "dialogue forgets the recipe first, so the result does not depend on what this player "
                         + "already knew.",
                 "lowtalk:learn", "lowtalk:knows", "CraftingRecipe");
-        judged("state.role", "check_state_role_ok", "check_state_role_bad",
-                "<<state>> puts an NPC's role into a named state",
-                "The tester goes into Stopped and back to Idle, and reports which state it is in at each step. "
-                        + "Its role inherits both from Template_Temple.",
+        gap("state.role", Kind.WORLD, "<<state>> puts an NPC's role into a named state",
+                List.of("Spawn an NPC whose role defines two real states and bind a dialogue to it.",
+                        "Move it between them with <<state>>."),
+                "It ends up in the state it was put into. The harness tester cannot do this: asked for its "
+                        + "own list, its role has one usable state. It reports Idle and \"start\" -- the "
+                        + "engine's own placeholder -- and entering start throws inside the game, because no "
+                        + "sub-states are defined for it. The game's Test_State_* roles define several and "
+                        + "would close this.",
                 "lowtalk:state", "NPCPlugin");
-        judged("perm.check", "check_perm_ok", "check_perm_bad", "perm() reads the player's permissions",
-                "perm() is true for a permission the player holds and false for one nobody has been granted. "
-                        + "Weaker than the same player in two permission states, which no dialogue can arrange, "
-                        + "but it does catch a perm() that answers the same way to everything.",
+        gap("perm.check", Kind.SETUP, "perm() reads the player's permissions",
+                List.of("Guard a line with perm(\"some.node\").", "Open it as a player who is not an admin."),
+                "The line shows only with the permission. The tester tried to do this with one player, by "
+                        + "asking about a node nobody holds, and the harness proved it cannot: an Admin holds "
+                        + "the wildcard, so perm() answered true for lowtalk.harness.nobody.holds.this. It "
+                        + "needs a second, unprivileged player.",
                 "lowtalk:perm");
         tree("player.npc.names", "check_player_npc_names", "{player} and {npc} interpolate the right names",
                 "The line reads your own name and the tester's, not the literal braces and not each other's.",

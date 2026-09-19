@@ -46,7 +46,7 @@ Harness tester. Pick an area; each option runs one check and comes back.
 
 == start_more
 The rest: this NPC, the language itself, and what gets remembered.
--> This NPC <<if remaining("npc") + remaining("state") > 0>>
+-> This NPC <<if remaining("npc") > 0>>
     <<jump area_npc>>
 -> Choices and flow <<if remaining("basics") > 0>>
     <<jump area_basics>>
@@ -69,7 +69,7 @@ The rest: this NPC, the language itself, and what gets remembered.
 What the player is: what they are called, what they may do, what they know, and what is remembered of them.
 -> Memory <<if remaining("memory") > 0>>
     <<jump area_memory>>
--> The player themselves <<if remaining("player") + remaining("perm") + remaining("learn") > 0>>
+-> The player themselves <<if remaining("player") + remaining("learn") > 0>>
     <<jump area_player>>
 -> Back
     <<jump start_more>>
@@ -275,8 +275,6 @@ This NPC's own name, state and animation. Renaming persists, so put it back when
     <<jump check_npc_rename_restore>>
 -> Turn hostile, then friendly again <<if not checked("npc.attitude")>>
     <<jump check_npc_attitude>>
--> Go into another state, and back <<if not checked("state.role")>>
-    <<jump check_state_role>>
 -> Back
     <<jump start_more>>
 
@@ -508,8 +506,6 @@ Forgotten. The line above should go back to saying we have not met.
 The player themselves. Each of these checks itself where it can, so you mostly just read what happened.
 -> The names in text <<if not checked("player.npc.names")>>
     <<jump check_player_npc_names>>
--> What the player is allowed to do <<if not checked("perm.check")>>
-    <<jump check_perm>>
 -> Learning a recipe <<if not checked("learn.recipe")>>
     <<jump check_learn_recipe>>
 -> Back
@@ -517,27 +513,6 @@ The player themselves. Each of these checks itself where it can, so you mostly j
 
 == check_player_npc_names
 {player}, I am {npc}. Your name should be your own and mine should be this tester's, and neither should read as braces or as the other one.
--> Back
-    <<jump area_player>>
-
-== check_perm
-Permissions. You hold lowtalk.creator; nobody holds lowtalk.harness.nobody.holds.this. perm() should tell them apart.
-<<if perm("lowtalk.creator") and not perm("lowtalk.harness.nobody.holds.this")>>
-    <<jump check_perm_ok>>
-<<else>>
-    <<jump check_perm_bad>>
-<<endif>>
-
-== check_perm_ok
-Correct: true for the one you hold, false for the one nobody was granted. A line guarded on a permission will show to the right people.
--> Back
-    <<jump area_player>>
-
-== check_perm_bad
-Wrong, or my assertion is. What each one actually answers:
-  perm("lowtalk.creator") = {perm("lowtalk.creator")}, read directly = {probe_perm("lowtalk.creator")}
-  perm("lowtalk.harness.nobody.holds.this") = {perm("lowtalk.harness.nobody.holds.this")}, read directly = {probe_perm("lowtalk.harness.nobody.holds.this")}
-Recorded as a failure already, and written to the log.
 -> Back
     <<jump area_player>>
 
@@ -571,28 +546,3 @@ Recorded as a failure already, and written to the log.
 # This role inherits Idle and Stopped from Template_Temple. The check decides itself: the state is read back
 # after each change, so nobody has to judge whether an NPC's behaviour looks different.
 
-== check_state_role
-My role inherits two states from its template, Idle and Stopped. Watch: into Stopped, then back to Idle.
-<<state Stopped>>
-<<if not npc_in_state("Stopped")>>
-    <<state Idle>>
-    <<jump check_state_role_bad>>
-<<endif>>
-<<state Idle>>
-<<if npc_in_state("Idle")>>
-    <<jump check_state_role_ok>>
-<<else>>
-    <<jump check_state_role_bad>>
-<<endif>>
-
-== check_state_role_ok
-Both took: I reported Stopped while stopped and Idle once back. A dialogue can drive an NPC's role state.
--> Back
-    <<jump area_npc>>
-
-== check_state_role_bad
-Wrong, or my assertion is. What I can see of my own state:
-  in Stopped = {npc_in_state("Stopped")}, in Idle = {npc_in_state("Idle")}
-Recorded as a failure already, and written to the log. I have put myself back to Idle.
--> Back
-    <<jump area_npc>>

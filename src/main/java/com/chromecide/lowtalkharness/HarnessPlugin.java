@@ -177,6 +177,25 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
         // it is in, so <<state>> was untestable by anything but watching behaviour change -- and the tester's
         // role was believed to have no states at all, which turned out to be wrong: Template_Temple, which it
         // inherits from, declares Idle and Stopped.
+        // What states this NPC's role actually has, asked of the role rather than read out of its JSON by
+        // eye. The first version of the state check asserted against "Stopped", a word that appears in the
+        // template file and is not one of its states, and the check failed for that reason alone.
+        api.registerFunction("npc_states", "npc_states()",
+                "Harness only: the states this dialogue's NPC role defines, comma separated.",
+                (ctx, args) -> String.join(", ", stateNames(ctx)));
+        api.registerFunction("npc_other_state", "npc_other_state()",
+                "Harness only: a state of this NPC's role that it is not currently in, or \"\" if there is none.",
+                (ctx, args) -> {
+                    Ref<EntityStore> npc = ctx.getNpcRef();
+                    var store = ctx.getEntityStore();
+                    if (npc == null || store == null || !npc.isValid()) return "";
+                    var support = com.hypixel.hytale.server.npc.role.support.StateSupport.get(npc, store);
+                    int now = support.getStateIndex();
+                    for (int index : support.getStateHelper().getAllMainStates()) {
+                        if (index != now) return support.getStateHelper().getStateName(index);
+                    }
+                    return "";
+                });
         api.registerFunction("npc_in_state", "npc_in_state(\"Stopped\")",
                 "Harness only: true when this dialogue's NPC is in that state of its role.",
                 (ctx, args) -> {
@@ -226,6 +245,19 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
                     }
                     return (double) left;
                 });
+    }
+
+    /** Every state name this dialogue's NPC role defines, in the order the role lists them. */
+    private static List<String> stateNames(@Nonnull DialogueContext ctx) {
+        Ref<EntityStore> npc = ctx.getNpcRef();
+        var store = ctx.getEntityStore();
+        if (npc == null || store == null || !npc.isValid()) return List.of();
+        var support = com.hypixel.hytale.server.npc.role.support.StateSupport.get(npc, store);
+        List<String> out = new java.util.ArrayList<>();
+        for (int index : support.getStateHelper().getAllMainStates()) {
+            out.add(support.getStateHelper().getStateName(index));
+        }
+        return out;
     }
 
     // ---- the panel
