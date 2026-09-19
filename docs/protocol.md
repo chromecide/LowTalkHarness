@@ -31,6 +31,11 @@ Do them in order. Do not overlap them.
 - Deploy both jars, boot, and note the build id the harness prints.
 - **Build any diagnostic you think you might need now.** Adding one mid-session costs a stop, a jar, a start,
   a rejoin and a walk back to wherever you were. On 2026-09-19 that happened twice.
+- Start the capture watcher beside the server if the walk includes anything timed:
+  `tools/capture-watch.sh <server.log>`. It photographs the screen the moment a check runs and files the
+  picture under the check and the server version. The server cannot see the client — a title goes out as a
+  one-way packet with no acknowledgement — so a screenshot is the only evidence that anything appeared at
+  all, and the only thing to compare against on the next version.
 
 Nothing in this phase happens once the walk has started.
 

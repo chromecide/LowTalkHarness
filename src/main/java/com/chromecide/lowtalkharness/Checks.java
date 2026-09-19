@@ -416,21 +416,6 @@ public final class Checks {
         return out;
     }
 
-    /** The checks that touch a named surface, for re-running after a server update changes it. */
-    public static List<Check> covering(@Nonnull String surface) {
-        String needle = surface.toLowerCase(Locale.ROOT);
-        List<Check> out = new ArrayList<>();
-        for (Check c : BY_ID.values()) {
-            for (String s : c.covers()) {
-                if (s.toLowerCase(Locale.ROOT).contains(needle)) {
-                    out.add(c);
-                    break;
-                }
-            }
-        }
-        return out;
-    }
-
     /** Every surface any check claims to exercise. */
     public static java.util.Set<String> coveredSurfaces() {
         java.util.Set<String> out = new java.util.LinkedHashSet<>();

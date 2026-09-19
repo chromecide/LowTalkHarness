@@ -177,73 +177,6 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
         // it is in, so <<state>> was untestable by anything but watching behaviour change -- and the tester's
         // role was believed to have no states at all, which turned out to be wrong: Template_Temple, which it
         // inherits from, declares Idle and Stopped.
-        // What states this NPC's role actually has, asked of the role rather than read out of its JSON by
-        // eye. The first version of the state check asserted against "Stopped", a word that appears in the
-        // template file and is not one of its states, and the check failed for that reason alone.
-        // Permissions, moved on the player mid-conversation. perm() was a gap for the stated reason that it
-        // needs "the same player with and without a permission", which no dialogue could arrange -- and an
-        // Admin holds the wildcard, so nothing they are asked about comes back false. Both halves turn out to
-        // be arrangeable: a node may be written as a deny with a leading minus, user permissions are consulted
-        // before group ones, and a deny is matched before the wildcard. So the tester can take a permission
-        // away from an admin, ask, give it back, ask again, and put everything back as it found it.
-        //
-        // Scoped to lowtalkharness.* and nothing else. This is a privilege-changing command in a test mod;
-        // it has no business being able to name a permission that means something.
-        api.registerCommand("perm_deny", "<<perm_deny lowtalkharness.perm.probe>>",
-                "Harness only: deny the player a lowtalkharness.* node, overriding any group grant.",
-                (ctx, args) -> permWrite(ctx, args, true));
-        api.registerCommand("perm_grant", "<<perm_grant lowtalkharness.perm.probe>>",
-                "Harness only: grant the player a lowtalkharness.* node.",
-                (ctx, args) -> permWrite(ctx, args, false));
-        api.registerCommand("perm_clear", "<<perm_clear lowtalkharness.perm.probe>>",
-                "Harness only: remove both the grant and the deny, leaving the player as they were.",
-                (ctx, args) -> permClear(ctx, args));
-        // Whether an NPC could even notice this player. A creative-mode player is invisible to NPCs unless
-        // allowNPCDetection is set, so the fighter check cannot be observed at all in creative -- and would
-        // otherwise record a pass for a goblin standing politely still. The advice to "switch to creative
-        // first if you would rather not be hit" made the check untestable, twice, before anyone noticed.
-        api.registerFunction("player_detectable", "player_detectable()",
-                "Harness only: true when NPCs can see this player at all (false in creative).",
-                (ctx, args) -> {
-                    Ref<EntityStore> ref = ctx.getPlayer().getReference();
-                    var store = ctx.getEntityStore();
-                    if (ref == null || store == null || !ref.isValid()) return Boolean.FALSE;
-                    boolean seen = com.hypixel.hytale.server.npc.util.EntityDetectionUtil
-                            .isDetectableByNPCs(ref, store);
-                    getLogger().at(Level.INFO).log("[harness] player_detectable() = %s", seen);
-                    return seen;
-                });
-        api.registerFunction("npc_states", "npc_states()",
-                "Harness only: the states this dialogue's NPC role defines, comma separated.",
-                (ctx, args) -> String.join(", ", stateNames(ctx)));
-        api.registerFunction("npc_other_state", "npc_other_state()",
-                "Harness only: a state of this NPC's role that it is not currently in, or \"\" if there is none.",
-                (ctx, args) -> {
-                    Ref<EntityStore> npc = ctx.getNpcRef();
-                    var store = ctx.getEntityStore();
-                    if (npc == null || store == null || !npc.isValid()) return "";
-                    var support = com.hypixel.hytale.server.npc.role.support.StateSupport.get(npc, store);
-                    int now = support.getStateIndex();
-                    for (int index : support.getStateHelper().getAllMainStates()) {
-                        if (index != now) return support.getStateHelper().getStateName(index);
-                    }
-                    return "";
-                });
-        api.registerFunction("npc_in_state", "npc_in_state(\"Stopped\")",
-                "Harness only: true when this dialogue's NPC is in that state of its role.",
-                (ctx, args) -> {
-                    if (args.isEmpty()) return Boolean.FALSE;
-                    Ref<EntityStore> npc = ctx.getNpcRef();
-                    var store = ctx.getEntityStore();
-                    if (npc == null || store == null || !npc.isValid()) return Boolean.FALSE;
-                    var support = com.hypixel.hytale.server.npc.role.support.StateSupport.get(npc, store);
-                    String wanted = String.valueOf(args.get(0));
-                    int index = support.getStateHelper().getStateIndex(wanted);
-                    boolean in = index >= 0 && support.inState(index);
-                    getLogger().at(Level.INFO).log("[harness] npc_in_state(%s): index=%d, now in '%s' (index %d) -> %s",
-                            wanted, index, support.getStateName(), support.getStateIndex(), in);
-                    return in;
-                });
         // The same questions perm() and knows() answer, asked without going through LowTalk, and logged. When
         // a self-judging check fails, this says whether the feature disagreed with the game or the assertion
         // disagreed with reality.
@@ -313,19 +246,6 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
                 .removeUserPermission(id, java.util.Set.of(node, "-" + node));
         getLogger().at(Level.INFO).log("[harness] cleared %s for %s", node, id);
         return null;
-    }
-
-    /** Every state name this dialogue's NPC role defines, in the order the role lists them. */
-    private static List<String> stateNames(@Nonnull DialogueContext ctx) {
-        Ref<EntityStore> npc = ctx.getNpcRef();
-        var store = ctx.getEntityStore();
-        if (npc == null || store == null || !npc.isValid()) return List.of();
-        var support = com.hypixel.hytale.server.npc.role.support.StateSupport.get(npc, store);
-        List<String> out = new java.util.ArrayList<>();
-        for (int index : support.getStateHelper().getAllMainStates()) {
-            out.add(support.getStateHelper().getStateName(index));
-        }
-        return out;
     }
 
     // ---- the panel

@@ -84,6 +84,17 @@ what really happened on a real server.
 order, without overlapping. Written after an evening that found three real bugs and spent most of itself
 recovering from testing, diagnosing and fixing all happening at once against a jar that kept changing.
 
+## Evidence the server cannot collect
+
+```
+tools/capture-watch.sh ~/hytale-mods/lowtalk-firstrun/server.log
+```
+
+Photographs the screen the moment a check runs, filed under the check and the server version. A title is sent
+as a one-way packet with no acknowledgement, so nothing on the server can say whether it appeared; the client
+is on the same machine, so the screen can be. It does not make the judgement automatic — it makes the evidence
+exist.
+
 ## Which checks to re-run after a Hytale update
 
 ```
