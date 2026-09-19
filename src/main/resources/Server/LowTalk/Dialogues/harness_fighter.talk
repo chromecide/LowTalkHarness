@@ -43,7 +43,7 @@ I can actually fight, which the tester cannot. My attitude to you is {attitude()
 <<endif>>
 
 == check_attitude_behaviour_ok
-Hostile, though you would not know it from in here: I do nothing while we are talking. Close this window and watch. Then talk to me again and make me friendly. You will take a few hits; I will patch you up afterwards.
+Hostile, though you would not know it from in here: I do nothing while we are talking. Close this window and watch. Expect ??? and then !!! over my head with a lurch of animation -- that is the game noticing you and committing, not a fault. Then talk to me again and make me friendly. You will take a few hits; I will patch you up afterwards.
 -> Leave me to it
     <<end>>
 -> On second thoughts, make me friendly again

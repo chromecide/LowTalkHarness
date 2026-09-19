@@ -199,7 +199,9 @@ public final class Checks {
         add(new Check("attitude.behaviour", Kind.STATION, "A hostile NPC actually behaves like one",
                 List.of("Run /harness fighter to put a goblin in front of you.",
                         "Talk to it and let it turn on you."),
-                "It comes at you once hostile -- and only once the dialogue closes, because it does nothing "
+                "It shows ??? then !!! overhead with a jolt of animation -- the game's own awareness ramp, "
+                        + "Question and Alerted, not a fault -- and comes at you once hostile, and only once "
+                        + "the dialogue closes, because it does nothing "
                         + "while the window is open. Making it friendly again does not stop it on its own -- "
                         + "an attitude decides who an NPC starts on, not a fight in progress -- so the calm "
                         + "option does that and then <<calm>>, which clears the target. "
