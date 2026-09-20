@@ -47,15 +47,19 @@ public final class HarnessNpc {
     public static final String FIGHTER_NAME = "LowTalk harness (fighter)";
 
     /**
-     * Roles that will fight, tried in order until one spawns.
+     * Roles that attack a player on sight, tried in order until one spawns.
      *
-     * <p>It was a single hard-coded {@code Goblin_Scavenger}, which exists on the release line and not on
-     * 0.7.0-pre.3.1, so the check simply did not start there and said so only in the tester's chat. A list
-     * survives a role being renamed between versions; every one of these is a concrete role that fights on
-     * both lines as of 0.6.8 and 0.7.0-pre.3.1.
+     * <p>What makes a role attack is {@code DefaultPlayerAttitude: Hostile}, resolved up its Reference chain
+     * — not whether the word "Hostile" appears somewhere in it. The first version of this list was chosen the
+     * second way and led with {@code Goblin_Scrapper}, which mentions Hostile, has no default attitude to
+     * players at all, and stood there peacefully while a tester waited to be hit.
+     *
+     * <p>A list rather than one name because assets move: the original {@code Goblin_Scavenger} exists on
+     * 0.6.8 and not on 0.7.0-pre.3.1. Every one of these is a concrete, non-boss, humanoid role whose
+     * default attitude to a player is Hostile on both lines as of 0.6.8 and 0.7.0-pre.3.1.
      */
     private static final java.util.List<String> FIGHTER_ROLES = java.util.List.of(
-            "Goblin_Scrapper", "Goblin_Thief", "Trork_Sentry", "Outlander_Hunter", "Scarak_Defender");
+            "Trork_Brawler", "Outlander_Marauder", "Outlander_Brute", "Trork_Guard", "Ghoul");
 
     private HarnessNpc() {}
 
