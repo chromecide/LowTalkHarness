@@ -1,0 +1,320 @@
+{
+  "serverVersion": "0.7.0-pre.3.1",
+  "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)",
+  "updated": "2026-09-20T00:12:14.362264Z",
+  "checks": {
+    "station.travel": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:56:01.326843Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "station.npc.spawn": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:56:19.449284Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "station.talker": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:56:39.031571Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "block.bind.door": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:55:33.452030Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "block.bind.single": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:55:31.590115Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "notify.toast": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:51:54.044895Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "notify.warning": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:51:58.175937Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "title.default": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:06.038857Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "title.minor.alias": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:10.790306Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "title.major": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:14.688405Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "title.goblinbreach": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:20.279483Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "title.voideviction": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:25.675517Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "items.give": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:33.054860Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "items.take": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:33.967812Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "items.count": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:34.613432Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "body.heal": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:42.074454Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "body.stat": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:39.144550Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "body.effect": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:40.379024Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "body.cure": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:41.324366Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "world.weather": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:44.819673Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "world.weather.clear": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:47.737622Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "world.time": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:50.793875Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "world.translate": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:52.045922Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "media.music": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:52:56.722386Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "media.music.clear": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:01.467622Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "media.vfx": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:04.609183Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "media.camera": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:08.512225Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "npc.anim": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:14.214741Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "npc.sound": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:17.400897Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "npc.rename": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:20.522822Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "npc.rename.restore": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:21.471681Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "npc.attitude": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:22.760583Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "basics.continue": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:28.289992Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "basics.hidden": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:33.059359Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "basics.disabled": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:35.598260Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "basics.reveal": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:31.226951Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "input.word": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:39.590887Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "input.plural": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:43.821181Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "random.chance": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:52.177115Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "random.number": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:54.035705Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "random.ordinal": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:55.399223Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "format.variation": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:53:59.216678Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "format.once": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:54:00.738747Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "format.wait": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:54:02.397536Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "format.include": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:54:06.092776Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "progress.reputation.up": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:54:10.321385Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "progress.reputation.down": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:54:12.358983Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "progress.objective": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:54:13.783960Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "memory.npc": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:54:21.994573Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "memory.player": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:54:23.986531Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "memory.visited": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:54:25.817017Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "memory.marker": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:54:27.240170Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "memory.reset": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:54:28.668384Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "learn.recipe": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:54:38.683739Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "perm.check": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:54:36.254421Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "player.npc.names": {
+      "seen": true,
+      "firstSeen": "2026-09-19T23:54:33.404253Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "attitude.behaviour": {
+      "seen": true,
+      "firstSeen": "2026-09-20T00:01:42.425122Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "editor.rows.render": {
+      "seen": false,
+      "verdict": "PASS",
+      "note": "checked by hand on 0.7.0-pre.3.1, LowTalk 9a40a89f",
+      "decidedAt": "2026-09-20T00:07:31.903169Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "editor.add.every.command": {
+      "seen": false,
+      "verdict": "PASS",
+      "note": "checked by hand on 0.7.0-pre.3.1, LowTalk 9a40a89f",
+      "decidedAt": "2026-09-20T00:07:31.905552Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "block.bind.survives.restart": {
+      "seen": false,
+      "verdict": "PASS",
+      "note": "door and brazier both opened test_npc after the bounce, logged as BLOCK opens (00:09:42-46) on 0.7.0-pre.3.1",
+      "decidedAt": "2026-09-20T00:12:14.358263Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    },
+    "npc.rename.survives.restart": {
+      "seen": false,
+      "verdict": "PASS",
+      "note": "nameplate, persisted and live all read Renamed Tester after the bounce (00:11:04)",
+      "decidedAt": "2026-09-20T00:12:14.362217Z",
+      "build": "0.4.0+hytale.0.7.0-pre.3.1 (9a40a89f)"
+    }
+  }
+}
