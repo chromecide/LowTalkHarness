@@ -1,13 +1,17 @@
 # What is not covered, and why
 
-Eight of the sixty-seven checks have nothing driving them. They are in the list anyway, with no passage to
-watch, so they show in `/harness todo` as never run rather than not appearing at all. A gap you can see is a
-gap someone can close.
+Eight of the sixty-seven checks have no passage driving them. They are in the list anyway, so they show in
+`/harness todo` as never run rather than not appearing at all. A gap you can see is a gap someone can close.
+
+Two of the eight — the editor pair — are walked by hand every time and recorded that way, so they have
+results. The other six were not exercised at all in the 0.4.0 walks: `run.command.gated`, `layout.chain`,
+`on.join`, `trigger.volume`, `state.role` and `objective.talk.task`. Sixty-one of the sixty-seven checks
+carry a result on both lines.
 
 This file is why each one is a gap, which is usually more interesting than the gap itself.
 
-Written against LowTalk 0.4.0 on Hytale 0.6.8, after the walk that closed five of the entries this file used
-to have.
+Written against LowTalk 0.4.0, after the two gate walks it was tagged on: Hytale 0.6.8 (build `9bff6e0d`) and
+0.7.0-pre.3.1 (build `9a40a89f`). Five entries this file used to have were closed on the way.
 
 ## Needs the server set up differently
 
