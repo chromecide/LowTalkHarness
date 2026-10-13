@@ -203,9 +203,30 @@ public final class RunRecord {
             if (c == null || c.outcome() == null) continue;
             // An unstamped result is not a matching one: it was written before the stamp existed, which is
             // exactly the run this was built for — fifty-two results across five jars, indistinguishable.
-            if (!build.equals(c.build)) out.add(id);
+            if (!idOf(build).equals(idOf(c.build))) out.add(id);
         }
         return out;
+    }
+
+    /**
+     * The identity inside a build string, which is the only part a result has to match.
+     *
+     * <p>A build string carries version and id together — {@code 0.5.0 (b6ad2eca)} — because a report wants
+     * both. Only the id answers whether the code is the same, so only the id is compared. Comparing the whole
+     * string made the version part of the identity by the back door and undid what {@link Build} stopped
+     * doing: going from 0.4.0 to 0.5.0 discounted fifty-six results against a jar whose code had not changed
+     * by one byte.
+     *
+     * <p>A string with no parenthesised id is an older or unreadable stamp. It comes back whole, so it matches
+     * nothing current and the result is discounted — the safe direction, because the other one carries a
+     * result over to a jar that may not deserve it.
+     */
+    private static String idOf(@Nullable String buildString) {
+        if (buildString == null) return "";
+        int open = buildString.lastIndexOf('(');
+        int close = buildString.lastIndexOf(')');
+        if (open < 0 || close < open) return buildString;
+        return buildString.substring(open + 1, close);
     }
 
     public Path file() {
@@ -230,7 +251,7 @@ public final class RunRecord {
      */
     public synchronized void markSeen(@Nonnull String id) {
         Check c = check(id);
-        if (c.seen && build.equals(c.build)) return;
+        if (c.seen && idOf(build).equals(idOf(c.build))) return;
         if (!c.seen) {
             c.seen = true;
             c.firstSeen = Instant.now().toString();

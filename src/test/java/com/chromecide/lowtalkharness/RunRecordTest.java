@@ -209,4 +209,44 @@ class RunRecordTest {
         RunRecord r = new RunRecord(dir, "0.0.0-test", "0.4.0 (cccccccc)");
         assertEquals(List.of(anId()), r.fromAnotherBuild(Checks.ids()));
     }
+
+    /**
+     * A version bump must not discount a walk.
+     *
+     * <p>This is the regression that cost a real evening: 0.4.0 became 0.5.0, the build string changed, and
+     * fifty-six results were reported as not counting towards the release although the two jars differed in
+     * exactly one entry and exactly one line of it — the version. The identity is the id, and only the id.
+     */
+    @Test
+    void aVersionBumpDoesNotDiscountAWalk(@TempDir Path dir) {
+        RunRecord walked = new RunRecord(dir, "0.7.0", "0.4.0 (b6ad2eca)");
+        walked.markSeen("notify.toast");
+        walked.flush();
+
+        RunRecord shipped = new RunRecord(dir, "0.7.0", "0.5.0 (b6ad2eca)");
+        assertTrue(shipped.fromAnotherBuild(List.of("notify.toast")).isEmpty(),
+                "same id, so the walk still describes what ships");
+    }
+
+    /** The other half of the same statement: a real code change must still discount it. */
+    @Test
+    void aChangedBuildIdStillDiscountsAWalk(@TempDir Path dir) {
+        RunRecord walked = new RunRecord(dir, "0.7.0", "0.5.0 (b6ad2eca)");
+        walked.markSeen("notify.toast");
+        walked.flush();
+
+        RunRecord shipped = new RunRecord(dir, "0.7.0", "0.5.0 (0000dead)");
+        assertEquals(List.of("notify.toast"), shipped.fromAnotherBuild(List.of("notify.toast")));
+    }
+
+    /** A stamp from before ids existed matches nothing, which is the safe direction to fail. */
+    @Test
+    void anUnstampedResultDoesNotCount(@TempDir Path dir) {
+        RunRecord walked = new RunRecord(dir, "0.7.0", "0.4.0");
+        walked.markSeen("notify.toast");
+        walked.flush();
+
+        RunRecord shipped = new RunRecord(dir, "0.7.0", "0.5.0 (b6ad2eca)");
+        assertEquals(List.of("notify.toast"), shipped.fromAnotherBuild(List.of("notify.toast")));
+    }
 }

@@ -21,7 +21,14 @@ import java.security.MessageDigest;
  * not.
  *
  * <p>The version string alone will not do it — every build of 0.4.0 carries the same one. So the identity is
- * the jar itself, hashed. Two builds differ if and only if their bytes do, which is exactly the question.
+ * the jar itself, hashed.
+ *
+ * <p><b>But not the version string inside it.</b> {@link #describe()} already prints the version beside the
+ * hash, so putting it in the hash as well says the same thing twice and costs something real: bumping 0.4.0
+ * to 0.5.0 moved the id and the release gate discounted a walk of 56 checks against a jar that was identical
+ * in all 411 of its other entries. A day of testing thrown away to one string. The id answers "did the code
+ * change", so the version is blanked before hashing and everything else in the manifest still counts — a
+ * changed server-version range or a new dependency moves the id, as it should.
  */
 public final class Build {
 
@@ -53,13 +60,41 @@ public final class Build {
         }
     }
 
-    /** First four bytes of the jar's SHA-256, which is plenty to tell one evening's builds apart. */
-    private static String hash(@Nonnull Path jar) {
-        try (InputStream in = Files.newInputStream(jar)) {
+    /** The manifest entry whose version is blanked before hashing, so a version bump alone leaves the id alone. */
+    static final String MANIFEST = "manifest.json";
+
+    /** Matches the manifest's own version value, whatever it is, so it can be replaced by a constant. */
+    private static final java.util.regex.Pattern VERSION =
+            java.util.regex.Pattern.compile("(\"Version\"\\s*:\\s*)\"[^\"]*\"");
+
+    /**
+     * First four bytes of a SHA-256 over the jar's entries, with the manifest's version blanked.
+     *
+     * <p>Entries are sorted by name and fed in as name then content. A zip makes no promise about the order it
+     * hands its entries back, and an id that depended on that order could differ between two identical jars.
+     *
+     * <p>If the version cannot be found to blank it, the manifest is hashed as it stands. That is the old
+     * behaviour, which discounts a walk it did not have to — the safe direction to fail, because the other one
+     * carries a result over to a jar that might not deserve it.
+     */
+    static String hash(@Nonnull Path jar) {
+        try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(jar.toFile())) {
+            java.util.List<String> names = zip.stream().filter(e -> !e.isDirectory())
+                    .map(java.util.zip.ZipEntry::getName).sorted().toList();
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] buffer = new byte[16 * 1024];
-            int read;
-            while ((read = in.read(buffer)) > 0) digest.update(buffer, 0, read);
+            for (String name : names) {
+                digest.update(name.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                byte[] content;
+                try (InputStream in = zip.getInputStream(zip.getEntry(name))) {
+                    content = in.readAllBytes();
+                }
+                if (name.equals(MANIFEST)) {
+                    String text = new String(content, java.nio.charset.StandardCharsets.UTF_8);
+                    content = VERSION.matcher(text).replaceFirst("$1\"\"")
+                            .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                }
+                digest.update(content);
+            }
             byte[] out = digest.digest();
             StringBuilder hex = new StringBuilder(8);
             for (int i = 0; i < 4; i++) hex.append(String.format("%02x", out[i]));
