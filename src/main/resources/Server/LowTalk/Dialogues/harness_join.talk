@@ -1,0 +1,25 @@
+# A dialogue that opens on its own when a player finishes loading in: the only driver for the on.join check.
+#
+# No npc: directive, because it has no NPC -- that is the point of on: join -- so speaker: names the voice.
+#
+# It opens once per player and then stops. A window that reappeared on every login for ever would be a
+# nuisance long after it had proved its point, and the check is a one-off by nature.
+#
+# Gated on visited() rather than the harness's own checked(): the harness marks on.join from the opener while
+# the dialogue is still opening, so checked("on.join") is already true by the time this passage is read and
+# the window would never show at all. visited() answers about a passage, which is only reached once the
+# window is really up.
+
+title: LowTalk harness: joined
+speaker: Harness
+on: join
+
+== start
+<<if visited("check_on_join")>>
+    <<end>>
+<<endif>>
+<<jump check_on_join>>
+
+== check_on_join
+This opened by itself when you finished loading in, with no NPC and nothing clicked: that is the whole of the on.join check. It will not open again for you.
+<<end>>

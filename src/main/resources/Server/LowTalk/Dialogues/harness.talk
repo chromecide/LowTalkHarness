@@ -46,7 +46,10 @@ Harness tester. Pick an area; each option runs one check and comes back.
 
 == start_more
 The rest: this NPC, the language itself, and what gets remembered.
--> This NPC <<if remaining("npc") > 0>>
+# Unguarded on purpose. The restart-arming option in this area is not watched by anything -- see
+# npc.rename.survives.restart in Checks.java for why -- so remaining("npc") cannot count it, and guarding
+# the link would hide the area the moment the five watched checks were done, with that option still in it.
+-> This NPC
     <<jump area_npc>>
 -> Choices and flow <<if remaining("basics") > 0>>
     <<jump area_basics>>
@@ -265,7 +268,7 @@ Music, particles and the camera.
 # ---- this NPC -----------------------------------------------------------------------------------------------
 
 == area_npc
-This NPC's own name, state and animation. Renaming persists, so put it back when you are done.
+This NPC's own name, state and animation. Renaming persists, so put it back when you are done -- except for the last option, which exists to leave it changed.
 -> Play an animation <<if not checked("npc.anim")>>
     <<jump check_npc_anim>>
 -> Play a sound here <<if not checked("npc.sound")>>
@@ -276,6 +279,10 @@ This NPC's own name, state and animation. Renaming persists, so put it back when
     <<jump check_npc_rename_restore>>
 -> Turn hostile, then friendly again <<if not checked("npc.attitude")>>
     <<jump check_npc_attitude>>
+# Offered only once the name has been put back, so picking it cannot cost npc.rename.restore its run. It
+# stays offered afterwards: arming is repeatable, and forgetting to restart before stopping is easy.
+-> Rename me for the restart check and leave it <<if checked("npc.rename.restore")>>
+    <<jump arm_npc_rename_restart>>
 -> Back
     <<jump start_more>>
 
@@ -294,6 +301,13 @@ This NPC's own name, state and animation. Renaming persists, so put it back when
 
 == check_npc_rename_restore
 <<npc_name "LowTalk harness">>
+<<jump area_npc>>
+
+# Arms npc.rename.survives.restart rather than running it. Nothing watches this passage: the restart has not
+# happened yet, and a watched check counts as a pass on silence the moment it is seen.
+== arm_npc_rename_restart
+<<npc_name "Restart Survivor">>
+I am Restart Survivor now and nothing in here will put it back. Stop and start the server, look at my nameplate, then run /harness names -- it prints the persisted, live and nameplate names, so a failure says which of the three dropped it.
 <<jump area_npc>>
 
 == check_npc_attitude

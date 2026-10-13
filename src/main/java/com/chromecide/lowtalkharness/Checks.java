@@ -352,9 +352,18 @@ public final class Checks {
                 List.of("Bind a dialogue to a block.", "Stop and start the server.", "Use the block."),
                 "The boot log reports the binding loaded and the block still opens the dialogue.",
                 "lowtalk:blockbind");
+        // The tree has an option for this one, and it is still a gap rather than a watched check on purpose.
+        // That option only arms it: the rename happens, the restart has not. A watched check that has been
+        // seen counts as a pass on silence, so watching the arming passage would record this as proven the
+        // moment the name changed -- the one reading that cannot be true yet.
         gap("npc.rename.survives.restart", Kind.RESTART, "A renamed NPC keeps its name across a restart",
-                List.of("Rename the harness tester.", "Stop and start the server.", "Look at it."),
-                "The nameplate still shows the new name. Claimed since the feature shipped, never checked.",
+                List.of("On the harness tester, pick \"Rename me for the restart check and leave it\". It is "
+                                + "offered once the name has been put back, so it comes last.",
+                        "Stop and start the server.",
+                        "Look at the tester's nameplate, then run /harness names."),
+                "The nameplate still reads Restart Survivor. /harness names prints the persisted, live and "
+                        + "nameplate names side by side, so a failure says which of the three dropped it rather "
+                        + "than only that it did not hold. Claimed since the feature shipped, never checked.",
                 "lowtalk:npc_name");
         gap("objective.talk.task", Kind.SEQUENCE, "An objective completed by talking to another NPC",
                 List.of("Start Objective_LowTalk_Talk at station 12.", "Walk to station 1 and talk to it."),
@@ -365,9 +374,16 @@ public final class Checks {
                 "The dialogue opens on entry. Three trigger types are registered on every boot and nothing "
                         + "exercises any of them.",
                 "TriggerVolumesPlugin", "lowtalk:trigger");
+        // The harness ships harness_join.talk for this, and marks it from the opener rather than a passage --
+        // see HarnessPlugin.joinTriggerWorked for why the passage watcher cannot see it. Nobody can click a
+        // dialogue open with Opener.JOIN, so the opener alone is honest evidence.
         gap("on.join", Kind.RESTART, "A dialogue with on: join opens when a player loads in",
-                List.of("Give a dialogue the on: join directive.", "Disconnect and reconnect."),
-                "It opens by itself once the world has loaded.",
+                List.of("Disconnect and reconnect, or restart the server and rejoin.",
+                        "It opens once per player; /harness reset on.join and clearing LowTalk's player "
+                                + "memory puts it back."),
+                "A window titled \"LowTalk harness: joined\" opens by itself once the world has loaded, with no "
+                        + "NPC and nothing clicked. The harness records it from the opener, so the boot log says "
+                        + "so too.",
                 "lowtalk:onjoin");
         gap("layout.chain", Kind.SETUP, "Layout and history resolve through all four levels",
                 List.of("Set Layout in lowtalk.json, override it in a pack's Settings.json, then on a dialogue.",

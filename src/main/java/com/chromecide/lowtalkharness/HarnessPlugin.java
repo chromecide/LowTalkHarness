@@ -404,6 +404,23 @@ public class HarnessPlugin extends JavaPlugin implements DialogueListener {
         // LowTalk said how a conversation started there was no way to see it: the harness could tell that
         // talking_flame had opened and not that a block had opened it.
         if (ctx.getOpener() == com.chromecide.lowtalk.api.Opener.BLOCK) blockBindingWorked(ctx);
+        if (ctx.getOpener() == com.chromecide.lowtalk.api.Opener.JOIN) joinTriggerWorked();
+    }
+
+    /**
+     * A dialogue opened itself when a player loaded in, which is the whole of what on.join asks for.
+     *
+     * <p>Credited from the opener rather than by watching a passage, for the same reason a bound block is:
+     * {@link #onNode} ignores anything not opened by an NPC or a role, so a join-opened dialogue reaches its
+     * passages and is credited to nothing. Here the opener is the evidence. Nobody can click a dialogue open
+     * with {@code Opener.JOIN}; the server did it unprompted or it did not happen.
+     */
+    private void joinTriggerWorked() {
+        if (record.check("on.join").seen) return;
+        record.markSeen("on.join");
+        record.flush();
+        refreshHuds();
+        getLogger().at(Level.INFO).log("[harness] seen on.join (a dialogue opened itself when a player joined)");
     }
 
     /**
