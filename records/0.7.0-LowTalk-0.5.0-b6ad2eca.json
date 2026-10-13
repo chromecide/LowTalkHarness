@@ -1,0 +1,287 @@
+{
+  "serverVersion": "0.7.0",
+  "build": "0.4.0 (b6ad2eca)",
+  "updated": "2026-10-13T04:06:36.913043Z",
+  "checks": {
+    "attitude.behaviour": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:55:12.102193Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "station.travel": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:55:46.453245Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "station.npc.spawn": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:56:14.057790Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "block.bind.door": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:54:15.864726Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "notify.toast": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:47:16.574401Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "notify.warning": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:47:20.667211Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "title.default": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:47:27.600884Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "title.minor.alias": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:47:31.563305Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "title.major": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:47:35.522946Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "title.goblinbreach": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:47:40.451709Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "title.voideviction": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:47:45.800404Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "items.give": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:47:53.273761Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "items.take": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:47:54.691181Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "items.count": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:47:55.707007Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "body.heal": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:00.339793Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "body.stat": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:01.091938Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "body.effect": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:01.837673Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "body.cure": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:03.051984Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "world.weather": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:05.658327Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "world.weather.clear": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:08.705615Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "world.time": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:11.727116Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "world.translate": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:12.647310Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "media.music": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:25.822642Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "media.music.clear": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:33.448039Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "media.vfx": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:36.980888Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "media.camera": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:41.992094Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "npc.anim": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:49.286979Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "npc.sound": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:52.170949Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "npc.rename": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:53.363869Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "npc.rename.restore": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:55.353264Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "npc.attitude": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:48:57.113900Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "basics.continue": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:49:09.938259Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "basics.hidden": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:49:16.931971Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "basics.disabled": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:49:18.758884Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "basics.reveal": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:49:14.617302Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "input.word": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:49:23.564103Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "input.plural": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:49:28.125227Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "random.chance": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:49:41.114257Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "random.number": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:49:37.906312Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "random.ordinal": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:49:42.680179Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "format.variation": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:49:45.940881Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "format.once": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:49:47.838519Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "format.wait": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:49:49.459865Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "format.include": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:49:53.215740Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "progress.reputation.up": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:49:57.748476Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "progress.reputation.down": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:49:59.989624Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "progress.objective": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:50:01.951394Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "memory.npc": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:50:41.335439Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "memory.player": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:50:43.487645Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "memory.visited": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:50:45.081173Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "memory.marker": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:50:46.970050Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "memory.reset": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:50:48.320393Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "learn.recipe": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:50:31.244706Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "perm.check": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:50:28.022136Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "player.npc.names": {
+      "seen": true,
+      "firstSeen": "2026-10-13T03:50:25.945238Z",
+      "build": "0.4.0 (b6ad2eca)"
+    },
+    "on.join": {
+      "seen": true,
+      "firstSeen": "2026-10-13T04:06:36.912970Z",
+      "build": "0.4.0 (b6ad2eca)"
+    }
+  }
+}

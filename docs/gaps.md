@@ -1,17 +1,20 @@
 # What is not covered, and why
 
-Eight of the sixty-seven checks have no passage driving them. They are in the list anyway, so they show in
-`/harness todo` as never run rather than not appearing at all. A gap you can see is a gap someone can close.
+Eleven of the sixty-seven checks have no result on the walk 0.5.0 was tagged on. They are in the list anyway,
+so they show in `/harness todo` as never run rather than not appearing at all. A gap you can see is a gap
+someone can close.
 
-Two of the eight — the editor pair — are walked by hand every time and recorded that way, so they have
-results. The other six were not exercised at all in the 0.4.0 walks: `run.command.gated`, `layout.chain`,
-`on.join`, `trigger.volume`, `state.role` and `objective.talk.task`. Sixty-one of the sixty-seven checks
-carry a result on both lines.
+**Two different things are listed here, and conflating them would flatter the record.** Seven have nothing
+driving them: no passage, no opener, no way for the harness to know they happened, so closing one means
+building something. Four have a driver and were simply not walked this time — a decision to defer, not an
+absence of coverage. They are named as such below, because "nobody has built this" and "nobody did it on
+Tuesday" deserve different answers.
 
-This file is why each one is a gap, which is usually more interesting than the gap itself.
+This file is why each one is outstanding, which is usually more interesting than the gap itself.
 
-Written against LowTalk 0.4.0, after the two gate walks it was tagged on: Hytale 0.6.8 (build `9bff6e0d`) and
-0.7.0-pre.3.1 (build `9a40a89f`). Five entries this file used to have were closed on the way.
+Written against LowTalk 0.5.0, after the gate walk it was tagged on: Hytale 0.7.0, build `b6ad2eca`. One jar
+this release — 0.7.0 stable supersedes the pre-release line, so there is no second line to owe a walk to.
+Six entries this file used to have have been closed.
 
 ## Needs the server set up differently
 
@@ -22,9 +25,6 @@ runs console commands is not something to hand a creator.
 **`layout.chain`.** Four levels resolve in order — dialogue, pack, API, server config — and `ForceLayout`
 overrides all of them. Checking it means editing config between attempts. Four documented levels, none of them
 ever verified.
-
-**`on.join`.** A dialogue with `on: join` opens when a player finishes loading into a world. Requires a
-disconnect and a reconnect, which no dialogue can ask for.
 
 ## Needs something in the world that is not there
 
@@ -45,12 +45,44 @@ here is as likely to be the game's as ours.
 ## The editor
 
 **`editor.add.every.command`, `editor.rows.render`.** The in-game editor is the largest surface in the mod and
-has no automated coverage at all — no station can open a UI page and judge it. Every editor bug this month was
+has no automated coverage at all — no station can open a UI page and judge it. Every editor bug so far has been
 found by a person using it: a reward row that dropped the client, a dropdown that would not open, a panel that
-ran off the bottom of the screen, and an Add menu that added the wrong command. Four client-visible faults in
-one surface, found by luck rather than by testing.
+ran off the bottom of the screen, and an Add menu that added the wrong command. Then 0.5.0 added two more — a
+Bind button that stayed disabled when you chose a dialogue, and a `<<shop>>` the editor would build and then
+refuse to save. Six client-visible faults in one surface, every one found by luck.
+
+Worth noting what did catch the 0.5.0 pair in the end, because it was not a walk: both were one fact written
+in two places with nothing comparing them, and both are now held by a test that compares the two places. That
+is cheaper than driving the UI and it closes a whole shape of bug rather than one instance. It is not a
+substitute for opening the editor and looking — nothing yet is — but it is the first thing in this surface
+that a build can check.
 
 Still the most valuable thing left to build.
+
+## Not gaps: driven, and deferred to the next release
+
+These four have everything they need. They were left for 0.6.0 as a deliberate call, and saying so is the
+point of listing them apart — a reader who cannot tell these from the seven above is being told the coverage
+is worse than it is.
+
+**`block.bind.survives.restart`.** Arguably done and unrecorded. The 0.5.0 walk bound a dialogue to a door,
+the server was stopped and started, the boot log reported `1 block binding(s) loaded`, and the log then shows
+`opened test_basics (BLOCK)` — a block opening a dialogue after a restart, which is the whole claim. What is
+missing is a person's verdict, and the gate reserves that for somebody who actually looked, so an unrecorded
+pass stays unrecorded rather than being inferred from a log line.
+
+**`npc.rename.survives.restart`.** The tester grew an option for this during 0.5.0 — it renames itself and
+leaves the name changed, so the check can be armed from the same NPC that drives everything else instead of
+needing a second one. It was armed and the server was bounced; the nameplate was not looked at afterwards.
+One `/harness names` away.
+
+**`block.bind.single`.** Bind a dialogue to something one block tall, such as a chest, and use it. Proves
+base-block resolution did not break the ordinary case while the door case was being fixed. Nothing stands in
+the way of it; it is a minute of work that did not get done.
+
+**`station.talker`.** A dialogue opened by the NPC's own role through `LowTalkOpenDialogue`, with LowTalk's
+use hook not involved. The corridor has the station and the harness watches the passage, so it is driven — but
+it needs a role wired that way and the player in Adventure mode, and the walk ran in Creative.
 
 ## What closed, and how
 
@@ -67,6 +99,14 @@ about the obvious approach rather than about the question.
 - **`player.npc.names`** — never done, no reason. Done.
 - **`npc.rename.survives.restart`** — promised since the feature shipped, never checked, and false when
   finally checked: nothing marked the entity dirty, so the rename was never saved.
+- **`on.join`** — "requires a disconnect and a reconnect, which no dialogue can ask for". True, and beside
+  the point: the reconnect was never the hard part. The real reason it had never run is that no dialogue
+  anywhere declared `on: join`, so there was nothing to reconnect *into* — the check could not be done at all,
+  by anyone, and that had been read as a scheduling problem for two releases. The harness ships a dialogue
+  with the directive now, gated on `visited()` so it opens once per player instead of nagging on every login.
+  It marks itself from the opener rather than a passage, because the passage watcher ignores anything not
+  opened by an NPC or a role; nobody can click a dialogue open with `Opener.JOIN`, so the opener is honest
+  evidence. Closed on the first bounce after it shipped.
 - **`attitude.set`, now `attitude.behaviour`** — "the corridor's testers are deliberately placid". The answer
   was an NPC that is not: `/harness fighter` spawns a goblin. Closing it produced three facts about attitude
   that no amount of reading the code had produced, and one new LowTalk command.
